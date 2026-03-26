@@ -84,13 +84,22 @@ namespace S7Plus_PLC_Client
             try
             {
                 ReadButtonControls(false);
+
                 bool isBool = DataTypeComBox.SelectedItem?.ToString() == "Bool";
                 if (!isBool)
                 {
                     throw new Exception("Only Bool data type is supported in this demo. Please select Bool from the Data Type dropdown.");
                 }
-                await bool readBool = _driver?.ReadBoolAsync(1, 0, 0).Result ?? false; // For demonstration, we read DB1.DBX0.0. In a real application, you would parse the AddressTextBox to determine the correct DB number, byte offset, and bit index.
-                LogTextBox.AppendText($"Read {(isBool ? "Bool" : "Data")} from {AddressTextBox.Text}: {readBool}\r\n");
+
+                if (_driver == null)
+                {
+                    throw new Exception("Not connected to PLC.");
+                }
+
+                // Async read
+                bool readBool = await _driver.ReadBoolAsync(1, 0, 0);
+
+                LogTextBox.AppendText($"Read Bool from {AddressTextBox.Text}: {readBool}\r\n");
             }
             catch (Exception ex)
             {
@@ -102,32 +111,43 @@ namespace S7Plus_PLC_Client
             }
         }
 
+
         private async void WriteButton_Click(object sender, EventArgs e)
         {
             try
             {
                 WriteButtonControls(false);
+
                 bool isBool = DataTypeComBox.SelectedItem?.ToString() == "Bool";
                 if (!isBool)
                 {
                     throw new Exception("Only Bool data type is supported in this demo. Please select Bool from the Data Type dropdown.");
                 }
-                await bool validValue = bool.TryParse(DataTextBox.Text, out bool writeBool);
-                if (!validValue)
+
+                if (!bool.TryParse(DataTextBox.Text, out bool writeBool))
                 {
                     throw new Exception("Invalid value for Bool. Please enter 'true' or 'false' in the Data textbox.");
                 }
-                _driver?.WriteBoolAsync(1, 0, 0, writeBool).Wait(); // For demonstration, we write to DB1.DBX0.0. In a real application, you would parse the AddressTextBox to determine the correct DB number, byte offset, and bit index.
-                LogTextBox.AppendText($"Wrote {(isBool ? "Bool" : "Data")} to {AddressTextBox.Text}: {writeBool}\r\n");
+
+                if (_driver == null)
+                {
+                    throw new Exception("Not connected to PLC.");
+                }
+
+                // Async write
+                await _driver.WriteBoolAsync(1, 0, 0, writeBool);
+
+                LogTextBox.AppendText($"Wrote Bool to {AddressTextBox.Text}: {writeBool}\r\n");
             }
             catch (Exception ex)
             {
                 MessageBox.Show($"Write failed: {ex.Message}");
             }
-            finally 
+            finally
             {
                 WriteButtonControls(true);
             }
         }
+
     }
 }

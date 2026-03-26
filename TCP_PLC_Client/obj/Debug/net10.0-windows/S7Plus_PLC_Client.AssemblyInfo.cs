@@ -14,7 +14,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("S7Plus_PLC_Client")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+5f16bde50bb278169bbd77fb115fed63c329035f")]
 [assembly: System.Reflection.AssemblyProductAttribute("S7Plus_PLC_Client")]
 [assembly: System.Reflection.AssemblyTitleAttribute("S7Plus_PLC_Client")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

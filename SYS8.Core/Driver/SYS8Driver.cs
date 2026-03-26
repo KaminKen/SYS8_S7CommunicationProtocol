@@ -95,14 +95,14 @@ namespace SYS8.Core.Driver
         public ushort NegotiatedPduLength => _s7Protocol.NegotiatedPduLength; //set variable for public user to access
 
 
-        public Task<bool> ReadBoolAsync(ushort dbNumber, int byteOffset, int bitIndex)
+        public async Task<bool> ReadBoolAsync(ushort dbNumber, int byteOffset, int bitIndex)
         {
-            return _s7Protocol.ReadBoolAsync(dbNumber, byteOffset, bitIndex);
+            return await _s7Protocol.ReadBoolAsync(dbNumber, byteOffset, bitIndex);
         }
 
-        public Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value)
+        public async Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value)
         {
-            return _s7Protocol.WriteBoolAsync(dbNumber, byteOffset, bitIndex, value);
+            await _s7Protocol.WriteBoolAsync(dbNumber, byteOffset, bitIndex, value);
         }
     }
 }
