@@ -24,7 +24,7 @@ namespace SYS8.Core.Protocol
         private byte NextSequence()
         {
             _lastSequence++;
-            if (_lastSequence == 0) 
+            if (_lastSequence == 0)
             {
                 _lastSequence = 1; // sequence numbers start at 1, wrap around to 1 after 255
             }
@@ -134,7 +134,7 @@ namespace SYS8.Core.Protocol
             ushort negotiatedPdu = (ushort)((respPayload[pIndex + 6] << 8) | respPayload[pIndex + 7
                 ]); //pdu length reponse from the PLC at 6 and 7 index of params (+ pIndex for padding)
 
-            if (negotiatedPdu == 0) 
+            if (negotiatedPdu == 0)
             {
                 throw new Exception("Negotiated PDU length is 0.");
             }
@@ -144,7 +144,7 @@ namespace SYS8.Core.Protocol
             Debug.WriteLine($"S7 Setup Communication successful. Negotiated PDU length: {_pduLength}");
         }
 
-        
+
         public ushort NegotiatedPduLength => _pduLength; // expose negotiated PDU length obtained from PLC in class to public, so that it can be used by higher layers when building messages
 
 
@@ -210,18 +210,28 @@ namespace SYS8.Core.Protocol
             }
 
             ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
-            //ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
+            ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
 
             //Parameters function and item counts
 
-            int pIndex = 12; // parameters start at index 12 (10 bytes header + 2 bytes padding)
+            // int pIndex = 12; // parameters start at index 12 (10 bytes header + 2 bytes padding)
+
+            // Testing Code
+            // Some S7 models (like S7-1500) include 2 bytes of padding between the header and parameters, while others may not.
+            // To handle this variety, we calculate the padding dynamically based on the total length of the response and the lengths of the header, parameters, and data as specified in the header.
+            // As we know the header is always 10 bytes, and paramLength and dataLength are specified in the header.
+            // Initially, we subtract the header length, parameter length, and data length from the total response length to calculate padding, 
+            // and then calculate pIndex by adding the header length and padding together.
+            // To simplify, we can break down pIndex as 10 + (total length - 10 - paramLength - dataLength) to respPayload.Length - (paramLength + dataLength)
+            int pIndex = respPayload.Length - (paramLength + dataLength); // parameters start after header and any padding, which is total length minus param and data length
+
             if (paramLength < 2)
             {
                 throw new Exception("ReadVar response parameter block too short.");
             }
 
             byte functionCode = respPayload[pIndex];
-            if(functionCode != 0x04) 
+            if (functionCode != 0x04)
             {
                 throw new Exception($"Unexpected function code in read response parameters: 0x{functionCode:X2}");
             }
@@ -245,7 +255,7 @@ namespace SYS8.Core.Protocol
             ushort bitLen = (ushort)((respPayload[dIndex + 2] << 8) | respPayload[dIndex + 3]);
 
             if (returnCode != 0xFF)
-            { 
+            {
                 throw new Exception($"ReadVar failed, return code: 0x{returnCode:X2}");
             }
 
@@ -258,7 +268,7 @@ namespace SYS8.Core.Protocol
 
             // check if response contains enough bytes for the data based on bit length 
             // The data bytes are sent after the 4 bytes.
-            if (respPayload.Length < dIndex + 4 + databyte) 
+            if (respPayload.Length < dIndex + 4 + databyte)
             {
                 throw new Exception("ReadVar response missing data bytes.");
             }
@@ -328,8 +338,19 @@ namespace SYS8.Core.Protocol
             }
 
             ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
+            ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
 
-            int pIndex = 12; // parameters start at index 12 (10 bytes header + 2 bytes padding)
+            //int pIndex = 12; // parameters start at index 12 (10 bytes header + 2 bytes padding)
+
+            // Testing Code
+            // Some S7 models (like S7-1500) include 2 bytes of padding between the header and parameters, while others may not.
+            // To handle this variety, we calculate the padding dynamically based on the total length of the response and the lengths of the header, parameters, and data as specified in the header.
+            // As we know the header is always 10 bytes, and paramLength and dataLength are specified in the header.
+            // Initially, we subtract the header length, parameter length, and data length from the total response length to calculate padding, 
+            // and then calculate pIndex by adding the header length and padding together.
+            // To simplify, we can break down pIndex as 10 + (total length - 10 - paramLength - dataLength) to respPayload.Length - (paramLength + dataLength)
+            int pIndex = respPayload.Length - (paramLength + dataLength); // parameters start after header and any padding, which is total length minus param and data length
+
             byte functionCode = respPayload[pIndex];
             if (functionCode != 0x05)
             {
@@ -338,7 +359,7 @@ namespace SYS8.Core.Protocol
 
             int dIndex = pIndex + paramLength; // data starts after header and parameters
             byte returnCode = respPayload[dIndex];
-            if (returnCode != 0xFF) 
+            if (returnCode != 0xFF)
             {
                 throw new Exception($"WriteVar failed, return code: 0x{returnCode:X2}");
             }
