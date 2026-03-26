@@ -1,0 +1,23 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v10.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v10.0": {
+      "SYS8.Core/1.0.0": {
+        "runtime": {
+          "SYS8.Core.dll": {}
+        }
+      }
+    }
+  },
+  "libraries": {
+    "SYS8.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}
