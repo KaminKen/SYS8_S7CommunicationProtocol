@@ -85,11 +85,22 @@ namespace SYS8.Core.Protocol
             parameters[11] = (byte)((bitAddress >> 16) & 0xFF);
             parameters[12] = (byte)((bitAddress >> 8) & 0xFF);
             parameters[13] = (byte)(bitAddress & 0xFF); // Address within DB for the bit to read
+
             //Combine header and parameters into a single PDU
             byte[] pdu = new byte[header.Length + parameters.Length];
             Buffer.BlockCopy(header, 0, pdu, 0, header.Length);
             Buffer.BlockCopy(parameters, 0, pdu, header.Length, parameters.Length);
             return pdu;
+
+
+            /*
+            Fix to try:
+            - header changed to 4 bytes of data
+            - pack 00 transprotSize 00 and 01 with it
+
+            Try and failed to get response from s7-1200 but works for s7-1500
+            */
+
         }
 
 
