@@ -100,6 +100,11 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadBoolAsync(dbNumber, byteOffset, bitIndex);
         }
 
+        public async Task<Int16> ReadInt16Async(ushort dbNumber, int byteOffset, int bitIndex)
+        {
+            return await _s7Protocol.ReadInt16Async(dbNumber, byteOffset, bitIndex);
+        }
+
         public async Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value)
         {
             await _s7Protocol.WriteBoolAsync(dbNumber, byteOffset, bitIndex, value);

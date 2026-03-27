@@ -149,7 +149,7 @@
             // 
             DataTypeComBox.AutoCompleteMode = AutoCompleteMode.Suggest;
             DataTypeComBox.FormattingEnabled = true;
-            DataTypeComBox.Items.AddRange(new object[] { "Bool" });
+            DataTypeComBox.Items.AddRange(new object[] { "Bool", "Int16" });
             DataTypeComBox.Location = new Point(700, 237);
             DataTypeComBox.Name = "DataTypeComBox";
             DataTypeComBox.Size = new Size(400, 33);

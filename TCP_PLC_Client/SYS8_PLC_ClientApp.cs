@@ -83,23 +83,28 @@ namespace S7CommunicationApp
         {
             try
             {
-                ReadButtonControls(false);
-
-                bool isBool = DataTypeComBox.SelectedItem?.ToString() == "Bool";
-                if (!isBool)
-                {
-                    throw new Exception("Only Bool data type is supported in this demo. Please select Bool from the Data Type dropdown.");
-                }
-
                 if (_driver == null)
                 {
                     throw new Exception("Not connected to PLC.");
                 }
 
-                // Async read
-                bool readBool = await _driver.ReadBoolAsync(1, 0, 0);
+                ReadButtonControls(false);
 
-                LogTextBox.AppendText($"Read Bool from {AddressTextBox.Text}: {readBool}\r\n");
+                string datatypeCombox = DataTypeComBox.Text;
+
+                switch (datatypeCombox) { 
+                    case "Bool":
+                        bool readBool = await _driver.ReadBoolAsync(1, 0, 0);
+                        LogTextBox.AppendText($"Read Bool from {AddressTextBox.Text}: {readBool}\r\n");
+                        break;
+                    case "Int16":
+                        short readInt16 = await _driver.ReadInt16Async(1, 0, 10);
+                        LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readInt16}\r\n");
+                        break;
+                    default:
+                        throw new Exception("Only Bool data type is supported in this demo. Please select Bool from the Data Type dropdown.");
+                }
+
             }
             catch (Exception ex)
             {

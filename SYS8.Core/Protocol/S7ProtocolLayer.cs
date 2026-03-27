@@ -32,7 +32,7 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
-        /// Template for building S7 header
+        /// Helper funcion: Template for building S7 header
         /// </summary>
         /// <param name="rosctr">What are the type of message sending to the PLC</param>
         /// <param name="paramLength">Length of the parameters</param>
@@ -55,6 +55,41 @@ namespace SYS8.Core.Protocol
             header[6] = (byte)(paramLength >> 8); header[7] = (byte)(paramLength & 0xFF); // Parameter length
             header[8] = (byte)(dataLength >> 8); header[9] = (byte)(dataLength & 0xFF); // Data length
             return header;
+        }
+
+
+        /// <summary>
+        /// Build ReadVar request PDU for reading a boolean value from the PLC.
+        /// </summary>
+        /// <param name="dbNumber">Datablock Numbers</param>
+        /// <param name="byteOffset">The index of bytes the user want to read from</param>
+        /// <param name="bitIndex">The index of bit that the user want to read from that byte</param>
+        /// <param name="transportSize">Transport size of data (0x01 for bit, 0x02 for Int16, etc)</param>
+        /// <param name="dataLength">Length of data</param>
+        /// <returns></returns>
+        private byte[] BuildReadRequest(ushort dbNumber, int byteOffset, int bitIndex, byte transportSize, ushort dataLength)
+        {
+            byte[] header = BuildS7Header(0x01, 14, 0); // Job, 14 bytes of parameters, 0 bytes of data
+            byte[] parameters = new byte[14];
+            parameters[0] = 0x04; // Read Var function code
+            parameters[1] = 0x01; // Number of items to read
+            parameters[2] = 0x12; // Variable specification for S7 (0x12 means S7 variable)
+            parameters[3] = 0x0A; // Length of following address specification (10 bytes for S7)
+            parameters[4] = 0x10; // Syntax ID for S7Any
+            parameters[5] = transportSize; // Transport size for the type being read (e.g., 0x01 for BIT, 0x02 for INT16, etc.)
+            parameters[6] = (byte)(dataLength >> 8); parameters[7] = (byte)(dataLength & 0xFF); // Length of data to read
+            parameters[8] = (byte)(dbNumber >> 8);
+            parameters[9] = (byte)(dbNumber & 0xFF); // DB number
+            parameters[10] = 0x84; // DB number specifier
+            int bitAddress = (byteOffset * 8) + bitIndex; // calculate bit address from byte offset and bit index
+            parameters[11] = (byte)((bitAddress >> 16) & 0xFF);
+            parameters[12] = (byte)((bitAddress >> 8) & 0xFF);
+            parameters[13] = (byte)(bitAddress & 0xFF); // Address within DB for the bit to read
+            //Combine header and parameters into a single PDU
+            byte[] pdu = new byte[header.Length + parameters.Length];
+            Buffer.BlockCopy(header, 0, pdu, 0, header.Length);
+            Buffer.BlockCopy(parameters, 0, pdu, header.Length, parameters.Length);
+            return pdu;
         }
 
 
@@ -148,6 +183,8 @@ namespace SYS8.Core.Protocol
         public ushort NegotiatedPduLength => _pduLength; // expose negotiated PDU length obtained from PLC in class to public, so that it can be used by higher layers when building messages
 
 
+        //TODO: optimize and refine. Possibly create helper function for all Read for checking header and params sent from PLC as they are mostly the same
+
         /// <summary>
         /// Read boolean value from the PLC
         /// </summary>
@@ -159,28 +196,8 @@ namespace SYS8.Core.Protocol
         public async Task<bool> ReadBoolAsync(ushort dbNumber, int byteOffset, int bitIndex)
         {
             Debug.WriteLine($"Reading boolean from DB{dbNumber}.DBX{byteOffset}.{bitIndex}...");
-            byte[] header = BuildS7Header(0x01, 14, 0); // Job with 14 bytes of parameters and 0 bytes of data
-            byte[] parameters = new byte[14];
-            parameters[0] = 0x04; // Read Var function code
-            parameters[1] = 0x01; // Number of items to read
-            parameters[2] = 0x12; // Variable specification for S7 (0x12 means S7 variable)
-            parameters[3] = 0x0A; // Length of following address specification (10 bytes for S7)
-            parameters[4] = 0x10; // Syntax ID for S7Any
-            parameters[5] = 0x01; // Transport bit (for bool)
-            parameters[6] = 0x00; parameters[7] = 0x01; // Length of data to read (1 byte)
-            parameters[8] = (byte)(dbNumber >> 8);
-            parameters[9] = (byte)(dbNumber & 0xFF); // DB number
-            parameters[10] = 0x84; // DB number specifier
 
-            int bitAddress = (byteOffset * 8) + bitIndex; // calculate bit address from byte offset and bit index
-            parameters[11] = (byte)((bitAddress >> 16) & 0xFF);
-            parameters[12] = (byte)((bitAddress >> 8) & 0xFF);
-            parameters[13] = (byte)(bitAddress & 0xFF); // Address within DB for the bit to read
-
-            //Combine and send
-            byte[] pdu = new byte[header.Length + parameters.Length];
-            Buffer.BlockCopy(header, 0, pdu, 0, header.Length);
-            Buffer.BlockCopy(parameters, 0, pdu, header.Length, parameters.Length);
+            byte[] pdu = BuildReadRequest(dbNumber, byteOffset, bitIndex, 0x01, 1); // transport size 0x01 for bit, data length 1 bit
 
             await _tpktCotp.SendPayloadAsync(pdu);
 
@@ -203,14 +220,19 @@ namespace SYS8.Core.Protocol
                 throw new Exception("Invalid S7 protocol ID in read response.");
             }
 
-            byte rosctr = respPayload[1];
-            if (rosctr != 0x03) //Ack_Data
+            if (respPayload[1] != 0x03) // rosctr == Ack_Data
             {
-                throw new Exception($"Unexpected ROSCTR in read response: 0x{rosctr:X2}");
+                throw new Exception($"Unexpected ROSCTR in read response: 0x{respPayload[1]:X2}");
             }
 
             ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
             ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
+
+            if (paramLength < 2)
+            {
+                throw new Exception("ReadVar response parameter block too short.");
+            }
+
 
             //Parameters function and item counts
 
@@ -224,11 +246,6 @@ namespace SYS8.Core.Protocol
             // and then calculate pIndex by adding the header length and padding together.
             // To simplify, we can break down pIndex as 10 + (total length - 10 - paramLength - dataLength) to respPayload.Length - (paramLength + dataLength)
             int pIndex = respPayload.Length - (paramLength + dataLength); // parameters start after header and any padding, which is total length minus param and data length
-
-            if (paramLength < 2)
-            {
-                throw new Exception("ReadVar response parameter block too short.");
-            }
 
             byte functionCode = respPayload[pIndex];
             if (functionCode != 0x04)
@@ -245,7 +262,7 @@ namespace SYS8.Core.Protocol
             // Data
 
             int dIndex = pIndex + paramLength; // data starts after header and parameters
-            if (respPayload.Length < dIndex + 4) // + 4 for data sent after parameters which includes return code, transport size, and bit length (2bytes) for the data read
+            if (respPayload.Length < dIndex + dataLength) // + 4 for data sent after parameters which includes return code, transport size, and bit length (2bytes) for the data read
             {
                 throw new Exception("Read response data block too short.");
             }
@@ -284,6 +301,110 @@ namespace SYS8.Core.Protocol
 
         }
 
+
+        //TODO: optimize and refine. Possibly create helper function for all Read for checking header and params sent from PLC as they are mostly the same
+        public async Task<Int16> ReadInt16Async(ushort dbNumber, int byteOffset, int bitIndex)
+        {
+            // Similar to ReadBoolAsync, but with parameters set for reading a 16-bit integer
+            // transport size = 0x02 for INT, 4 data params and data length = 2 bytes
+            // The data parsing would also need to be adjusted to read 2 bytes of data and convert it to an Int16 value.
+            byte[] pdu = BuildReadRequest(dbNumber, byteOffset, bitIndex, 0x02, 2); // transport size 0x02 for Int16, data length 2 bytes
+
+            await _tpktCotp.SendPayloadAsync(pdu);
+
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+
+            Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
+
+            if (respPayload.Length < 18)
+            {
+                throw new Exception("S7 Read response too short.");
+            }
+
+            if (respPayload[0] != 0x32)
+            {
+                throw new Exception("Invalid S7 protocol ID in read response.");
+            }
+
+            if (respPayload[1] != 0x03) // rosctr == Ack_Data
+            {
+                throw new Exception($"Unexpected ROSCTR in read response: 0x{respPayload[1]:X2}");
+            }
+
+            ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
+            ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
+
+            if (paramLength < 2)
+            {
+                throw new Exception("ReadVar response parameter block too short.");
+            }
+
+            int pIndex = respPayload.Length - (paramLength + dataLength); // parameters start after header and any padding
+
+            byte functionCode = respPayload[pIndex];
+
+            if (functionCode != 0x04)
+            {
+                throw new Exception($"Unexpected function code in read response parameters: 0x{functionCode:X2}");
+            }
+
+            byte itemCount = respPayload[pIndex + 1];
+            if (itemCount != 0x01)
+            {
+                throw new Exception("Unexpected item count in read response parameters. Expected 1, got " + itemCount);
+            }
+
+
+            // Can optimize and refine
+
+
+            // Data
+
+            int dIndex = pIndex + paramLength; // data starts after header and parameters
+            if (respPayload.Length < dIndex + dataLength) // + 4 for data sent after parameters which includes return code, transport size, and bit length (2bytes) for the data read
+            {
+                throw new Exception("Read response data block too short.");
+            }
+
+            byte returnCode = respPayload[dIndex];
+            byte transportSize = respPayload[dIndex + 1];
+            ushort bitLen = (ushort)((respPayload[dIndex + 2] << 8) | respPayload[dIndex + 3]);
+
+            if (returnCode != 0xFF)
+            {
+                throw new Exception($"ReadVar failed, return code: 0x{returnCode:X2}");
+            }
+
+            if (bitLen < 2)
+            {
+                throw new Exception("ReadVar response indicates less than 2 bits of data, expected at least 2 bit for Int16 read.");
+            }
+
+            int databyte = (bitLen + 7) / 8; // calculate how many bytes of data are returned for the bits read (should be 1 byte for a single bit)
+
+            // check if response contains enough bytes for the data based on bit length 
+            // The data bytes are sent after the 4 bytes.
+            if (respPayload.Length < dIndex + 4 + databyte)
+            {
+                throw new Exception("ReadVar response missing data bytes.");
+            }
+
+            int dataStartIndex = dIndex + 4; // data starts after the 4 bytes of return code, transport size, and bit length
+            Int16 value = (short)((respPayload[dataStartIndex] << 8) | respPayload[dataStartIndex + 1]); // combine 2 bytes of data into an Int16 value
+            return value;
+
+        }
+
+
+
+        /// <summary>
+        /// Write boolean value to PLC
+        /// </summary>
+        /// <param name="dbNumber">Datablock Numbers</param>
+        /// <param name="byteOffset">The index of bytes the user want to read from</param>
+        /// <param name="bitIndex">The index of bit that the user want to read from that byte</param>
+        /// <param name="value">true or false</param>
+        /// <exception cref="Exception"></exception>
         public async Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value)
         {
             // Similar to ReadBoolAsync, but with function code for Write Var and including the value in the data section of the message.
