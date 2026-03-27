@@ -9,9 +9,9 @@ using TKH.S7Plus.Net.DriverExtensions;
 using TKH.S7Plus.Net.Models;
 using TKH.S7Plus.Net.S7Variables;
 
-namespace S7Plus_PLC_Client
+namespace S7CommunicationApp
 {
-    public partial class Form1 : Form
+    public partial class S7PlusNET_ClientApp : Form
     {
         //TcpClient tcpClient;
         //NetworkStream networkStream;
@@ -20,7 +20,7 @@ namespace S7Plus_PLC_Client
         private bool isConnected = false;
 
 
-        public Form1()
+        public S7PlusNET_ClientApp()
         {
             InitializeComponent();
             ConnectionStatus(false);

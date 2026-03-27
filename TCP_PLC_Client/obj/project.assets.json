@@ -450,11 +450,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\TCP_PLC_Client\\S7Plus_PLC_Client.csproj",
-      "projectName": "S7Plus_PLC_Client",
-      "projectPath": "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\TCP_PLC_Client\\S7Plus_PLC_Client.csproj",
+      "projectUniqueName": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\S7CommunicationApp.csproj",
+      "projectName": "S7CommunicationApp",
+      "projectPath": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\S7CommunicationApp.csproj",
       "packagesPath": "C:\\Users\\kamin\\.nuget\\packages\\",
-      "outputPath": "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\TCP_PLC_Client\\obj\\",
+      "outputPath": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -475,8 +475,8 @@
         "net10.0-windows7.0": {
           "targetAlias": "net10.0-windows",
           "projectReferences": {
-            "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\SYS8.Core\\SYS8.Core.csproj": {
-              "projectPath": "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\SYS8.Core\\SYS8.Core.csproj"
+            "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\SYS8.Core.csproj": {
+              "projectPath": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\SYS8.Core.csproj"
             }
           }
         }

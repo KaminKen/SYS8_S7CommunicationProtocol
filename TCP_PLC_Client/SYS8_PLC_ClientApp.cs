@@ -8,7 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
-namespace S7Plus_PLC_Client
+namespace S7CommunicationApp
 {
     public partial class SYS8_PLC_ClientApp : Form
     {

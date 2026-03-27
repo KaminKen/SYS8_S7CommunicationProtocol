@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\SYS8.Core\\SYS8.Core.csproj": {}
+    "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\SYS8.Core.csproj": {}
   },
   "projects": {
-    "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\SYS8.Core\\SYS8.Core.csproj": {
+    "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\SYS8.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\SYS8.Core\\SYS8.Core.csproj",
+        "projectUniqueName": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\SYS8.Core.csproj",
         "projectName": "SYS8.Core",
-        "projectPath": "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\SYS8.Core\\SYS8.Core.csproj",
+        "projectPath": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\SYS8.Core.csproj",
         "packagesPath": "C:\\Users\\kamin\\.nuget\\packages\\",
-        "outputPath": "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\SYS8.Core\\obj\\",
+        "outputPath": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

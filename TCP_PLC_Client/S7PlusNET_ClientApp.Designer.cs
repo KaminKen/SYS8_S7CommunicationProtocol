@@ -1,6 +1,6 @@
-﻿namespace S7Plus_PLC_Client
+﻿namespace S7CommunicationApp
 {
-    partial class Form1
+    partial class S7PlusNET_ClientApp
     {
         /// <summary>
         ///  Required designer variable.

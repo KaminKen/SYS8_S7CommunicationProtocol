@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "TgCpmGyTtp0=",
+  "dgSpecHash": "rCDtyftNDdI=",
   "success": true,
-  "projectFilePath": "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\SYS8.Core\\SYS8.Core.csproj",
+  "projectFilePath": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\SYS8.Core.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }

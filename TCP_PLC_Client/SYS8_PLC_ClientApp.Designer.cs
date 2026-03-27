@@ -1,4 +1,4 @@
-﻿namespace S7Plus_PLC_Client
+﻿namespace S7CommunicationApp
 {
     partial class SYS8_PLC_ClientApp
     {

@@ -1,4 +1,4 @@
-namespace S7Plus_PLC_Client
+namespace S7CommunicationApp
 {
     internal static class Program
     {
@@ -12,7 +12,7 @@ namespace S7Plus_PLC_Client
             // see https://aka.ms/applicationconfiguration.
             ApplicationConfiguration.Initialize();
             Application.Run(new SYS8_PLC_ClientApp());
-            //Application.Run(new Form1());
+            //Application.Run(new S7PlusNET_ClientApp());
         }
     }
 }

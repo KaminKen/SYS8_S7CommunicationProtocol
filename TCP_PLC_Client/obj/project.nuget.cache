@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "9aT++f9IuhE=",
+  "dgSpecHash": "wKmFaeIO8Vs=",
   "success": true,
-  "projectFilePath": "D:\\SYSTENCE\\Code\\S7Plus_PLC_Client\\TCP_PLC_Client\\S7Plus_PLC_Client.csproj",
+  "projectFilePath": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\S7CommunicationApp.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\kamin\\.nuget\\packages\\bouncycastle.cryptography\\2.4.0\\bouncycastle.cryptography.2.4.0.nupkg.sha512",
     "C:\\Users\\kamin\\.nuget\\packages\\microsoft.extensions.dependencyinjection\\8.0.0\\microsoft.extensions.dependencyinjection.8.0.0.nupkg.sha512",
