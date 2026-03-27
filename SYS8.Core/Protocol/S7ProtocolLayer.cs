@@ -199,6 +199,8 @@ namespace SYS8.Core.Protocol
 
             byte[] pdu = BuildReadRequest(dbNumber, byteOffset, bitIndex, 0x01, 1); // transport size 0x01 for bit, data length 1 bit
 
+            Debug.WriteLine("S7 ReadVar request PDU: " + BitConverter.ToString(pdu));
+
             await _tpktCotp.SendPayloadAsync(pdu);
 
             Debug.WriteLine($"Reading boolean from DB{dbNumber}.DBX{byteOffset}.{bitIndex}...");
