@@ -225,22 +225,38 @@ namespace SYS8.Core.Protocol
             return value;
         }
 
-        //public async Task<Int64> ReadInt64Async(ushort dbNumber, int byteOffset, int bitIndex)
-        //{
-        //    byte[] pdu = S7ProtocolHelpers.BuildReadRequest(dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Int, 8); // transport size 0x05 for all integer, data length 4 bytes
+        public async Task<long> ReadInt64Async(ushort dbNumber, int byteOffset, int bitIndex)
+        {
+            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(
+                dbNumber,
+                byteOffset,
+                bitIndex,
+                S7Types.ItemTransport.DInt,
+                8);
 
-        //    await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu);
 
-        //    byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
 
-        //    Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
+            Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
 
-        //    var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 64);
+            var (_, _, dataHeaderStartIndex) =
+                S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 64);
 
-        //    int dataStartIndex = dataHeaderStartIndex + 4; // data starts after the 4 bytes of return code, transport size, and bit length
-        //    Int16 value = (short)((respPayload[dataStartIndex] << 8) | respPayload[dataStartIndex + 1]); // combine 2 bytes of data into an Int16 value
-        //    return value;
-        //}
+            int dataStartIndex = dataHeaderStartIndex + 4;
+
+            long value =
+                ((long)respPayload[dataStartIndex] << 56) |
+                ((long)respPayload[dataStartIndex + 1] << 48) |
+                ((long)respPayload[dataStartIndex + 2] << 40) |
+                ((long)respPayload[dataStartIndex + 3] << 32) |
+                ((long)respPayload[dataStartIndex + 4] << 24) |
+                ((long)respPayload[dataStartIndex + 5] << 16) |
+                ((long)respPayload[dataStartIndex + 6] << 8) |
+                 (long)respPayload[dataStartIndex + 7];
+
+            return value;
+        }
 
 
         public async Task<UInt16> ReadUInt16Async(ushort dbNumber, int byteOffset, int bitIndex)
@@ -279,6 +295,39 @@ namespace SYS8.Core.Protocol
                 ((UInt32)respPayload[dataStartIndex + 1] << 16) |
                 ((UInt32)respPayload[dataStartIndex + 2] << 8) |
                  (UInt32)respPayload[dataStartIndex + 3];
+            return value;
+        }
+
+        public async Task<ulong> ReadUInt64Async(ushort dbNumber, int byteOffset, int bitIndex)
+        {
+            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(
+                dbNumber,
+                byteOffset,
+                bitIndex,
+                S7Types.ItemTransport.DWord,
+                8);
+
+            await _tpktCotp.SendPayloadAsync(pdu);
+
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+
+            Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
+
+            var (_, _, dataHeaderStartIndex) =
+                S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 64);
+
+            int dataStartIndex = dataHeaderStartIndex + 4;
+
+            ulong value =
+                ((ulong)respPayload[dataStartIndex] << 56) |
+                ((ulong)respPayload[dataStartIndex + 1] << 48) |
+                ((ulong)respPayload[dataStartIndex + 2] << 40) |
+                ((ulong)respPayload[dataStartIndex + 3] << 32) |
+                ((ulong)respPayload[dataStartIndex + 4] << 24) |
+                ((ulong)respPayload[dataStartIndex + 5] << 16) |
+                ((ulong)respPayload[dataStartIndex + 6] << 8) |
+                 (ulong)respPayload[dataStartIndex + 7];
+
             return value;
         }
 
@@ -330,6 +379,55 @@ namespace SYS8.Core.Protocol
             }
 
             double value = BitConverter.ToDouble(valueBytes, 0);
+            return value;
+        }
+
+        public async Task<string> ReadStringAsync(ushort dbNumber, int byteOffset, int maxStringLength)
+        {
+            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(
+                dbNumber,
+                byteOffset,
+                0,
+                S7Types.ItemTransport.Byte,
+                (ushort)(maxStringLength + 2));
+
+            await _tpktCotp.SendPayloadAsync(pdu);
+
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+
+            Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
+
+            var (_, _, dataHeaderStartIndex) =
+                S7ProtocolHelpers.ValidateReadResponse(
+                    respPayload,
+                    0x04,
+                    0x01,
+                    (ushort)((maxStringLength + 2) * 8));
+
+            int dataStartIndex = dataHeaderStartIndex + 4;
+
+            byte declaredMaxLength = respPayload[dataStartIndex];
+            byte currentLength = respPayload[dataStartIndex + 1];
+
+            if (declaredMaxLength == 0)
+            {
+                return string.Empty;
+            }
+
+            if (currentLength > declaredMaxLength)
+            {
+                throw new Exception($"Invalid STRING length. Current length {currentLength} exceeds declared max length {declaredMaxLength}.");
+            }
+
+            if (currentLength > maxStringLength)
+            {
+                throw new Exception($"Returned STRING length {currentLength} exceeds requested max length {maxStringLength}.");
+            }
+
+            byte[] stringBytes = new byte[currentLength];
+            Buffer.BlockCopy(respPayload, dataStartIndex + 2, stringBytes, 0, currentLength);
+
+            string value = Encoding.ASCII.GetString(stringBytes);
             return value;
         }
 

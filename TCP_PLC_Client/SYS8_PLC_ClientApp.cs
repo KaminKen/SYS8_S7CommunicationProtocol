@@ -98,7 +98,7 @@ namespace S7CommunicationApp
                         LogTextBox.AppendText($"Read Bool from {AddressTextBox.Text}: {readBool}\r\n");
                         break;
                     case "Int16":
-                        short readInt16 = await _driver.ReadInt16Async(1, 0, 10);
+                        short readInt16 = await _driver.ReadInt16Async(1, 2, 0);
                         LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readInt16}\r\n");
                         break;
                     default:
