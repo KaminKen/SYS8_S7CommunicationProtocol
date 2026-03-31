@@ -58,8 +58,7 @@
               "RelativeToolTip": "SYS8.Core\\Driver\\SYS8Driver.cs",
               "ViewState": "AgIAAFMAAAAAAAAAAAAswGgAAABUAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T05:01:23.452Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-27T05:01:23.452Z"
             },
             {
               "$type": "Document",
@@ -71,8 +70,7 @@
               "RelativeToolTip": "TCP_PLC_Client\\SYS8_PLC_ClientApp.Designer.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T04:56:36.617Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-27T04:56:36.617Z"
             },
             {
               "$type": "Document",
@@ -95,7 +93,7 @@
               "RelativeDocumentMoniker": "SYS8.Core\\Protocol\\S7ProtocolLayer.cs",
               "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\S7ProtocolLayer.cs",
               "RelativeToolTip": "SYS8.Core\\Protocol\\S7ProtocolLayer.cs",
-              "ViewState": "AgIAAEUAAAAAAAAAAAAQwFEAAABBAAAAAAAAAA==",
+              "ViewState": "AgIAAEwAAAAAAAAAAAAUwFMAAABxAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-27T03:11:02.622Z",
               "EditorCaption": ""
@@ -123,8 +121,7 @@
               "RelativeToolTip": "TCP_PLC_Client\\Program.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAuwA0AAAAMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T02:54:19.94Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-03-27T02:54:19.94Z"
             },
             {
               "$type": "Document",
@@ -147,8 +144,7 @@
               "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\S7PlusNET_ClientApp.cs [Design]",
               "RelativeToolTip": "TCP_PLC_Client\\S7PlusNET_ClientApp.cs [Design]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T02:54:14.025Z",
-              "EditorCaption": " [Design]"
+              "WhenOpened": "2026-03-27T02:54:14.025Z"
             },
             {
               "$type": "Document",
@@ -159,8 +155,7 @@
               "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\SYS8_PLC_ClientApp.cs [Design]",
               "RelativeToolTip": "TCP_PLC_Client\\SYS8_PLC_ClientApp.cs [Design]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T02:54:01.154Z",
-              "EditorCaption": " [Design]"
+              "WhenOpened": "2026-03-27T02:54:01.154Z"
             }
           ]
         }
