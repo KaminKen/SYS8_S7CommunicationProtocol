@@ -124,6 +124,14 @@ namespace S7CommunicationApp
                         ulong readUInt64 = await _driver.ReadUInt64Async(dbNumber, byteOffset, bitIndex);
                         LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readUInt64}\r\n");
                         break;
+                    case "Float32":
+                        float readFloat32 = await _driver.ReadFloat32Async(dbNumber, byteOffset, bitIndex);
+                        LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readFloat32}\r\n");
+                        break;
+                    case "Float64":
+                        double readFloat64 = await _driver.ReadFloat64Async(dbNumber, byteOffset, bitIndex);
+                        LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readFloat64}\r\n");
+                        break;
                     default:
                         throw new Exception("Please select from drop down list or if still fail then this datatype manipulation is not implemented.");
                 }
