@@ -440,86 +440,141 @@ namespace SYS8.Core.Protocol
         /// <param name="bitIndex">The index of bit that the user want to read from that byte</param>
         /// <param name="value">true or false</param>
         /// <exception cref="Exception"></exception>
+        //public async Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value)
+        //{
+        //    // Similar to ReadBoolAsync, but with function code for Write Var and including the value in the data section of the message.
+        //    byte[] header = S7ProtocolHelpers.BuildS7Header(0x01, 14, 5); // 4 bytes for data header and 1 byte for the boolean value
+        //    byte[] parameters = new byte[14];
+        //    parameters[0] = 0x05;    // Write Var
+        //    parameters[1] = 0x01;    // 1 item
+
+        //    parameters[2] = 0x12;    // variable spec
+        //    parameters[3] = 0x0A;    // length of address spec (10)
+        //    parameters[4] = 0x10;    // S7ANY
+        //    parameters[5] = S7Types.ItemTransport.Bit;    // transport size = BIT
+
+        //    parameters[6] = 0x00; parameters[7] = 0x01;  // 1 element (1 bit)
+
+        //    parameters[8] = (byte)(dbNumber >> 8);
+        //    parameters[9] = (byte)(dbNumber & 0xFF);    // DB number
+        //    parameters[10] = 0x84;                       // area = DB
+
+        //    int bitAddress = byteOffset * 8 + bitIndex;
+        //    parameters[11] = (byte)((bitAddress >> 16) & 0xFF);
+        //    parameters[12] = (byte)((bitAddress >> 8) & 0xFF);
+        //    parameters[13] = (byte)(bitAddress & 0xFF);
+
+        //    byte[] data = new byte[5];
+        //    data[0] = 0x00; //reserved
+        //    data[1] = 0x01; // transport size = BIT
+        //    data[2] = 0x00; data[3] = 0x01; // bit length = 1
+
+        //    byte valueByte = value ? (byte)0x01 : (byte)0x00; // set to 0x01 if true, 0x00 if false
+        //    data[4] = valueByte;
+
+        //    // Combine and send
+        //    byte[] pdu = new byte[header.Length + parameters.Length + data.Length];
+        //    Buffer.BlockCopy(header, 0, pdu, 0, header.Length);
+        //    Buffer.BlockCopy(parameters, 0, pdu, header.Length, parameters.Length);
+        //    Buffer.BlockCopy(data, 0, pdu, (header.Length + parameters.Length), data.Length);
+
+        //    Debug.WriteLine("S7 WriteVar request PDU: " + BitConverter.ToString(pdu));
+
+        //    await _tpktCotp.SendPayloadAsync(pdu);
+
+        //    Debug.WriteLine($"Writing boolean to DB{dbNumber}.DBX{byteOffset}.{bitIndex}...");
+
+        //    byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+
+        //    Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
+
+        //    if (respPayload[0] != 0x32 || respPayload[1] != 0x03)
+        //    {
+        //        throw new Exception("Invalid response to WriteVar request.");
+        //    }
+
+        //    ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
+        //    ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
+
+        //    //int pIndex = 12; // parameters start at index 12 (10 bytes header + 2 bytes padding)
+
+        //    // Testing Code
+        //    // Some S7 models (like S7-1500) include 2 bytes of padding between the header and parameters, while others may not.
+        //    // To handle this variety, we calculate the padding dynamically based on the total length of the response and the lengths of the header, parameters, and data as specified in the header.
+        //    // As we know the header is always 10 bytes, and paramLength and dataLength are specified in the header.
+        //    // Initially, we subtract the header length, parameter length, and data length from the total response length to calculate padding, 
+        //    // and then calculate pIndex by adding the header length and padding together.
+        //    // To simplify, we can break down pIndex as 10 + (total length - 10 - paramLength - dataLength) to respPayload.Length - (paramLength + dataLength)
+        //    int pIndex = respPayload.Length - (paramLength + dataLength); // parameters start after header and any padding, which is total length minus param and data length
+
+        //    byte functionCode = respPayload[pIndex];
+        //    if (functionCode != 0x05)
+        //    {
+        //        throw new Exception($"Unexpected function code in write response parameters: 0x{functionCode:X2}");
+        //    }
+
+        //    int dIndex = pIndex + paramLength; // data starts after header and parameters
+        //    byte returnCode = respPayload[dIndex];
+        //    if (returnCode != 0xFF)
+        //    {
+        //        throw new Exception($"WriteVar failed, return code: 0x{returnCode:X2}");
+        //    }
+
+        //}
+
         public async Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value)
         {
-            // Similar to ReadBoolAsync, but with function code for Write Var and including the value in the data section of the message.
-            byte[] header = S7ProtocolHelpers.BuildS7Header(0x01, 14, 5); // 4 bytes for data header and 1 byte for the boolean value
+            byte[] header = S7ProtocolHelpers.BuildS7Header(0x01, 14, 5);
             byte[] parameters = new byte[14];
-            parameters[0] = 0x05;    // Write Var
-            parameters[1] = 0x01;    // 1 item
-
-            parameters[2] = 0x12;    // variable spec
-            parameters[3] = 0x0A;    // length of address spec (10)
-            parameters[4] = 0x10;    // S7ANY
-            parameters[5] = S7Types.ItemTransport.Bit;    // transport size = BIT
-
-            parameters[6] = 0x00; parameters[7] = 0x01;  // 1 element (1 bit)
-
+            parameters[0] = 0x05; // WriteVar
+            parameters[1] = 0x01; // 1 item
+            parameters[2] = 0x12;
+            parameters[3] = 0x0A;
+            parameters[4] = 0x10; // S7ANY
+            parameters[5] = S7Types.ItemTransport.Bit; // 0x01
+            parameters[6] = 0x00; parameters[7] = 0x01; // 1 bit
             parameters[8] = (byte)(dbNumber >> 8);
-            parameters[9] = (byte)(dbNumber & 0xFF);    // DB number
-            parameters[10] = 0x84;                       // area = DB
-
+            parameters[9] = (byte)(dbNumber & 0xFF);
+            parameters[10] = 0x84; // DB area
             int bitAddress = byteOffset * 8 + bitIndex;
             parameters[11] = (byte)((bitAddress >> 16) & 0xFF);
             parameters[12] = (byte)((bitAddress >> 8) & 0xFF);
             parameters[13] = (byte)(bitAddress & 0xFF);
 
             byte[] data = new byte[5];
-            data[0] = 0x00; //reserved
-            data[1] = 0x01; // transport size = BIT
-            data[2] = 0x00; data[3] = 0x01; // bit length = 1
+            data[0] = 0x00; // reserved
+            data[1] = S7Types.DataTransport.Bit; // 0x03 (important)
+            data[2] = 0x00; data[3] = 0x01; // 1 bit
+            data[4] = value ? (byte)0x01 : (byte)0x00;
 
-            byte valueByte = value ? (byte)0x01 : (byte)0x00; // set to 0x01 if true, 0x00 if false
-            data[4] = valueByte;
-
-            // Combine and send
             byte[] pdu = new byte[header.Length + parameters.Length + data.Length];
             Buffer.BlockCopy(header, 0, pdu, 0, header.Length);
             Buffer.BlockCopy(parameters, 0, pdu, header.Length, parameters.Length);
-            Buffer.BlockCopy(data, 0, pdu, (header.Length + parameters.Length), data.Length);
-
-            Debug.WriteLine("S7 WriteVar request PDU: " + BitConverter.ToString(pdu));
+            Buffer.BlockCopy(data, 0, pdu, header.Length + parameters.Length, data.Length);
 
             await _tpktCotp.SendPayloadAsync(pdu);
 
-            Debug.WriteLine($"Writing boolean to DB{dbNumber}.DBX{byteOffset}.{bitIndex}...");
-
             byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
 
-            Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
+            if (respPayload.Length < 12 || respPayload[0] != 0x32)
+                throw new Exception("Invalid S7 response to WriteVar.");
 
-            if (respPayload[0] != 0x32 || respPayload[1] != 0x03)
-            {
-                throw new Exception("Invalid response to WriteVar request.");
-            }
+            if (respPayload[1] != 0x03)
+                throw new Exception($"Unexpected ROSCTR 0x{respPayload[1]:X2} in WriteVar response.");
 
             ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
             ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
 
-            //int pIndex = 12; // parameters start at index 12 (10 bytes header + 2 bytes padding)
+            int pIndex = respPayload.Length - (paramLength + dataLength);
+            int dIndex = pIndex + paramLength;
 
-            // Testing Code
-            // Some S7 models (like S7-1500) include 2 bytes of padding between the header and parameters, while others may not.
-            // To handle this variety, we calculate the padding dynamically based on the total length of the response and the lengths of the header, parameters, and data as specified in the header.
-            // As we know the header is always 10 bytes, and paramLength and dataLength are specified in the header.
-            // Initially, we subtract the header length, parameter length, and data length from the total response length to calculate padding, 
-            // and then calculate pIndex by adding the header length and padding together.
-            // To simplify, we can break down pIndex as 10 + (total length - 10 - paramLength - dataLength) to respPayload.Length - (paramLength + dataLength)
-            int pIndex = respPayload.Length - (paramLength + dataLength); // parameters start after header and any padding, which is total length minus param and data length
+            if (dIndex >= respPayload.Length)
+                throw new Exception("WriteVar response data index out of range.");
 
-            byte functionCode = respPayload[pIndex];
-            if (functionCode != 0x05)
-            {
-                throw new Exception($"Unexpected function code in write response parameters: 0x{functionCode:X2}");
-            }
-
-            int dIndex = pIndex + paramLength; // data starts after header and parameters
             byte returnCode = respPayload[dIndex];
-            if (returnCode != 0xFF)
-            {
-                throw new Exception($"WriteVar failed, return code: 0x{returnCode:X2}");
-            }
 
+            if (returnCode != 0xFF)
+                throw new Exception($"WriteVar failed, return code: 0x{returnCode:X2}");
         }
     }
 
