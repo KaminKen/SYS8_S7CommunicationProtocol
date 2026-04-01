@@ -92,17 +92,42 @@ namespace S7CommunicationApp
 
                 string datatypeCombox = DataTypeComBox.Text;
 
+                ushort dbNumber = 1;
+                int byteOffset = 18;
+                int bitIndex = 0;
+
+
                 switch (datatypeCombox) { 
                     case "Bool":
-                        bool readBool = await _driver.ReadBoolAsync(1, 0, 0);
+                        bool readBool = await _driver.ReadBoolAsync(dbNumber, byteOffset, bitIndex);
                         LogTextBox.AppendText($"Read Bool from {AddressTextBox.Text}: {readBool}\r\n");
                         break;
                     case "Int16":
-                        short readInt16 = await _driver.ReadInt16Async(1, 2, 0);
+                        short readInt16 = await _driver.ReadInt16Async(dbNumber, byteOffset, bitIndex);
                         LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readInt16}\r\n");
                         break;
+                    case "Int32":
+                        int readInt32 = await _driver.ReadInt32Async(dbNumber, byteOffset, bitIndex);
+                        LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readInt32}\r\n");
+                        break;
+                    case "Int64":
+                        long readInt64 = await _driver.ReadInt64Async(dbNumber, byteOffset, bitIndex);
+                        LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readInt64}\r\n");
+                        break;
+                    case "UInt16":
+                        ushort readUInt16 = await _driver.ReadUInt16Async(dbNumber, byteOffset, bitIndex);
+                        LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readUInt16}\r\n");
+                        break;
+                    case "UInt32":
+                        uint readUInt32 = await _driver.ReadUInt32Async(dbNumber, byteOffset, bitIndex);
+                        LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readUInt32}\r\n");
+                        break;
+                    case "UInt64":
+                        ulong readUInt64 = await _driver.ReadUInt64Async(dbNumber, byteOffset, bitIndex);
+                        LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readUInt64}\r\n");
+                        break;
                     default:
-                        throw new Exception("Only Bool data type is supported in this demo. Please select Bool from the Data Type dropdown.");
+                        throw new Exception("Please select from drop down list or if still fail then this datatype manipulation is not implemented.");
                 }
 
             }
