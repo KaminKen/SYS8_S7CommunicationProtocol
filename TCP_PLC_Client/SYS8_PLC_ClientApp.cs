@@ -92,9 +92,7 @@ namespace S7CommunicationApp
 
                 string datatypeCombox = DataTypeComBox.Text;
 
-                ushort dbNumber = 1;
-                int byteOffset = 18;
-                int bitIndex = 0;
+                var (dbNumber, byteOffset, bitIndex) = _driver.ParseStringAddress(AddressTextBox.Text);
 
 
                 switch (datatypeCombox) { 

@@ -1,5 +1,6 @@
 ﻿using SYS8.Core.Protocol;
 using SYS8.Core.Transport;
+using SYS8.Core.StringManipulation;
 using System;
 using System.Threading.Tasks;
 using System.Diagnostics;
@@ -94,6 +95,12 @@ namespace SYS8.Core.Driver
 
         public ushort NegotiatedPduLength => _s7Protocol.NegotiatedPduLength; //set variable for public user to access
 
+
+        public (ushort dbNumber, int byteOffset, int bitIndex) ParseStringAddress(string address)
+        {
+            var parser = new StringAddressToAbsoluteAddress();
+            return parser.ParseStringAddress(address);
+        }
 
         public async Task<bool> ReadBoolAsync(ushort dbNumber, int byteOffset, int bitIndex)
         {
