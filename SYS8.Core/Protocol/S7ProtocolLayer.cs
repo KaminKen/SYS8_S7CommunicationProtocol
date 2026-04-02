@@ -179,21 +179,7 @@ namespace SYS8.Core.Protocol
 
             byte valueByte = respPayload[dataHeaderStartIndex + 4]; // First value byte is the 4th index after data start.
 
-            //shift 00000001 to left by bitIndex digit so it would become something like 00000100 if bitIndex is 2,
-            //then do bitwise AND with the value byte to extract the specific bit value,
-            //and check if it's not equal to 0 to determine if the bit is true or false.
-            bool returnValue;
-
-            if (valueByte == 0x01)
-            {
-                returnValue = true;
-            }
-            else
-            {
-                returnValue = false;
-            }
-            
-            return returnValue;
+            return valueByte == 0x01 ? true : false;
 
         }
 
