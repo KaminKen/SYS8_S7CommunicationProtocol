@@ -182,9 +182,18 @@ namespace SYS8.Core.Protocol
             //shift 00000001 to left by bitIndex digit so it would become something like 00000100 if bitIndex is 2,
             //then do bitwise AND with the value byte to extract the specific bit value,
             //and check if it's not equal to 0 to determine if the bit is true or false.
-            bool value = (valueByte & (1 << (bitIndex & 0x07))) != 0; // extract the specific bit value from the byte based on bit index
+            bool returnValue;
 
-            return value;
+            if (valueByte == 0x01)
+            {
+                returnValue = true;
+            }
+            else
+            {
+                returnValue = false;
+            }
+            
+            return returnValue;
 
         }
 
@@ -548,9 +557,14 @@ namespace SYS8.Core.Protocol
             Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
             Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
 
+            Debug.WriteLine("S7 WriteVar (BOOL) request PDU: " + BitConverter.ToString(pdu));
+
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
             byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+            Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
+
             S7ProtocolHelpers.ValidateWriteResponse(respPayload);
         }
 
