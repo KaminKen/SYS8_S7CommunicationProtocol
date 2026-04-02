@@ -1,5 +1,6 @@
 using Org.BouncyCastle.Utilities.Net;
 using System;
+using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -75,6 +76,7 @@ namespace S7CommunicationApp
         {
             try
             {
+                
                 if (isConnected)
                 {
                     MessageBox.Show("Already connected!");
@@ -95,6 +97,7 @@ namespace S7CommunicationApp
                 // Under S7Driver.cs of s7plus library
                 s7Driver = new S7Driver();
                 s7Driver.SetTimeout(TimeSpan.FromSeconds(5));
+
                 await s7Driver.Connect(IPTextBox.Text, port); //connect parse string to int not IP class
                 //tcpClient.Connect(IPAddress.Parse(IPTextBox.Text), port);
                 //networkStream = tcpClient.GetStream();
@@ -232,6 +235,8 @@ namespace S7CommunicationApp
 
         private async void WriteToPlcButton_Click(object sender, EventArgs e)
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             try
             {
                 ReadWriteEnabled(false);
@@ -314,6 +319,9 @@ namespace S7CommunicationApp
             {
                 ReadWriteEnabled(true);
             }
+            sw.Stop();
+            var time = sw.ElapsedMilliseconds;
+            Debug.WriteLine($"Write operation took {time} ms");
         }
 
         private void IPTextBox_TextChanged(object sender, EventArgs e)

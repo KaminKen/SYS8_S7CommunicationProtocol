@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
+using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
@@ -166,6 +167,8 @@ namespace S7CommunicationApp
 
         private async void WriteButton_Click(object sender, EventArgs e)
         {
+            Stopwatch sw = new Stopwatch();
+            sw.Start();
             try
             {
                 WriteButtonControls(false);
@@ -256,6 +259,9 @@ namespace S7CommunicationApp
             {
                 WriteButtonControls(true);
             }
+            sw.Stop();
+            var time = sw.ElapsedMilliseconds;
+            Debug.WriteLine($"Write operation took {time} ms");
         }
 
     }
