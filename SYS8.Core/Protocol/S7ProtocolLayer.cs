@@ -571,8 +571,14 @@ namespace SYS8.Core.Protocol
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
             Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
             Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+
+            Debug.WriteLine("S7 WriteVar (INT) request PDU: " + BitConverter.ToString(pdu));
+
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
             byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+            Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
+
             S7ProtocolHelpers.ValidateWriteResponse(respPayload);
         }
 
