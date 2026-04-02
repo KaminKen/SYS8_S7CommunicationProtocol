@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SYS8.Core.Transport
@@ -32,10 +33,14 @@ namespace SYS8.Core.Transport
         /// before proceeding with any operations that require the connection.
         /// </remarks>
         /// <returns></returns>
-        public async Task ConnectAsync(string ip, int port)
+        public async Task ConnectAsync(string ip, int port, CancellationToken cancellationToken = default)
         {
             _client = new TcpClient();
+            // ConnectAsync on TcpClient does not accept a cancellation token directly.
+            // Honor cancellation by observing the token before/after the connect call.
+            cancellationToken.ThrowIfCancellationRequested();
             await _client.ConnectAsync(ip, port);
+            cancellationToken.ThrowIfCancellationRequested();
 
             // GetStream() gets the NetworkStream used to send and receive data.
             _stream = _client.GetStream();
@@ -51,25 +56,25 @@ namespace SYS8.Core.Transport
         /// </remarks>
         /// <returns></returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public async Task SendAsync(byte[] data)
+        public async Task SendAsync(byte[] data, CancellationToken cancellationToken = default)
         {
             if (_stream == null) 
             {
                 throw new InvalidOperationException("Not connected.");
             }
             //WriteAsync writes data to the stream asynchronously. It takes the byte array, the offset (0 in this case), and the number of bytes to write (data.Length).
-            await _stream.WriteAsync(data, 0, data.Length);
+            await _stream.WriteAsync(data, 0, data.Length, cancellationToken);
         }
 
 
-        private async Task<byte[]> ReadExactAsync(int count)
+        private async Task<byte[]> ReadExactAsync(int count, CancellationToken cancellationToken)
         {
             byte[] buffer = new byte[count];
             int offset = 0;
 
             while (offset < count)
             {
-                int bytesRead = await _stream!.ReadAsync(buffer, offset, count - offset);
+                int bytesRead = await _stream!.ReadAsync(buffer, offset, count - offset, cancellationToken);
                 if (bytesRead == 0)
                 {
                     throw new Exception("Connection closed!");
@@ -91,7 +96,7 @@ namespace SYS8.Core.Transport
         /// <returns>Bytes Read from PLC</returns>
         /// <exception cref="InvalidOperationException"></exception>
         /// <exception cref="Exception"></exception>
-        public async Task<byte[]> ReceiveAsync()
+        public async Task<byte[]> ReceiveAsync(CancellationToken cancellationToken = default)
         {
             if (_stream == null) 
             {
@@ -99,14 +104,14 @@ namespace SYS8.Core.Transport
             }
 
             // Step 1: always exactly 4 bytes — the TPKT header
-            byte[] header = await ReadExactAsync(4);
+            byte[] header = await ReadExactAsync(4, cancellationToken);
 
             // Step 2: bytes [2] and [3] are big-endian total length
             // e.g. 00 16 = 22 → means read 18 more bytes
             int totalLength = (header[2] << 8) | header[3];
 
             // Step 3: read exactly the remaining bytes
-            byte[] rest = await ReadExactAsync(totalLength - 4);
+            byte[] rest = await ReadExactAsync(totalLength - 4, cancellationToken);
 
             // Step 4: combine into one clean message
             byte[] full = new byte[totalLength];

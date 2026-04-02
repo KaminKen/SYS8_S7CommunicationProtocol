@@ -31,7 +31,7 @@ namespace SYS8.Core.Protocol
         //    }
         //}
 
-        public async Task ConnectAsync()
+        public async Task ConnectAsync(CancellationToken cancellationToken = default)
         {
             //byte[] part1 = new byte[]
             //{
@@ -63,10 +63,10 @@ namespace SYS8.Core.Protocol
             };
 
             //var cts = new CancellationTokenSource(_timeout)
-            await _transport.SendAsync(packet); // TODO: send the connection request but may need to set timeout
+            await _transport.SendAsync(packet, cancellationToken); // TODO: send the connection request but may need to set timeout
 
 
-            byte[] response = await _transport.ReceiveAsync(); // wait for the response
+            byte[] response = await _transport.ReceiveAsync(cancellationToken); // wait for the response
 
             if (response.Length < 7 || response[0] != 0x03 || response[1] != 0x00)
             {
@@ -89,7 +89,7 @@ namespace SYS8.Core.Protocol
             }
         }
 
-        public async Task SendPayloadAsync(byte[] s7Payload)
+        public async Task SendPayloadAsync(byte[] s7Payload, CancellationToken cancellationToken = default)
         {
             int totalLength = 7 + s7Payload.Length; // 7 bytes for TPKT+COTP header
 
@@ -111,14 +111,14 @@ namespace SYS8.Core.Protocol
             Array.Copy(cotp, 0, dataBytes, tpkt.Length, cotp.Length);
             Array.Copy(s7Payload, 0, dataBytes, tpkt.Length + cotp.Length, s7Payload.Length);
 
-            await _transport.SendAsync(dataBytes);
+            await _transport.SendAsync(dataBytes, cancellationToken);
 
         }
 
-        public async Task<byte[]> ReceivePayloadAsync()
+        public async Task<byte[]> ReceivePayloadAsync(CancellationToken cancellationToken = default)
         {
             Debug.WriteLine("Waiting for response from PLC...");
-            byte[] response = await _transport.ReceiveAsync();
+            byte[] response = await _transport.ReceiveAsync(cancellationToken);
             Debug.WriteLine($"Received {response.Length} bytes from PLC.");
             // Basic validation of TPKT header
             if (response.Length < 7 || response[0] != 0x03 || response[1] != 0x00)

@@ -8,14 +8,20 @@ namespace SYS8.Core.Protocol
     {
         //internal: accessible in the same project
         private static byte _lastSequence = 0; // for tracking sequence numbers in messages
+        private static readonly object _seqLock = new object();
         internal static byte NextSequence()
-        { 
-            _lastSequence++;
-            if (_lastSequence == 0)
+        {
+            // Use a simple lock to make sequence generation thread-safe and preserve
+            // the original wrap-around semantics (1..255).
+            lock (_seqLock)
             {
-                _lastSequence = 1; // sequence numbers start at 1, wrap around to 1 after 255
+                _lastSequence++;
+                if (_lastSequence == 0)
+                {
+                    _lastSequence = 1; // sequence numbers start at 1, wrap around to 1 after 255
+                }
+                return _lastSequence;
             }
-            return _lastSequence;
         }
 
 
@@ -47,34 +53,46 @@ namespace SYS8.Core.Protocol
 
 
         /// <summary>
-        /// Build ReadVar request PDU for reading a boolean value from the PLC.
+        /// Build Read or Write request PDU header+parameters for S7 operations.
+        /// This helper centralizes common parameter construction and adjusts the S7 header data length
+        /// depending on whether the request is a Read (no data payload) or Write (includes 4-byte data header + payload length).
         /// </summary>
+        /// <param name="function">Function code (ReadVar or WriteVar)</param>
         /// <param name="dbNumber">Datablock Numbers</param>
-        /// <param name="byteOffset">The index of bytes the user want to read from</param>
-        /// <param name="bitIndex">The index of bit that the user want to read from that byte</param>
+        /// <param name="byteOffset">The index of bytes the user want to read/write from</param>
+        /// <param name="bitIndex">The index of bit within the byte</param>
         /// <param name="transportSize">Transport size of data (0x01 for bit, 0x02 for Int16, etc)</param>
-        /// <param name="dataLength">Length of data</param>
-        /// <returns></returns>
-        internal static byte[] BuildReadRequest(ushort dbNumber, int byteOffset, int bitIndex, byte transportSize, ushort dataLength)
+        /// <param name="dataUnitLength">Length of data unit. For Real/OctetString/Byte/Char transports this is in bytes; for other transports (bit/integer) this is in bits.</param>
+        /// <returns>Combined header+parameters PDU</returns>
+        internal static byte[] BuildReadWriteSetupRequest(FunctionCode function, ushort dbNumber, int byteOffset, int bitIndex, byte transportSize, ushort dataUnitLength)
         {
-            byte[] header = BuildS7Header(0x01, 14, 0); // Job, 14 bytes of parameters, 0 bytes of data
+            // Determine whether the length field is expressed in bytes or bits depending on transportSize.
+            bool lengthInBytes = transportSize == S7Types.ItemTransport.Real || transportSize == S7Types.ItemTransport.Byte || transportSize == S7Types.ItemTransport.Char;
+            int payloadBytes = lengthInBytes ? dataUnitLength : (dataUnitLength + 7) / 8;
+
+            // Determine S7 header data length: read requests include no data payload (0),
+            // write requests include 4 bytes of data header + payload length in bytes.
+            ushort s7DataLength = function == FunctionCode.ReadVar ? (ushort)0 : (ushort)(4 + payloadBytes);
+
+            byte[] header = BuildS7Header(0x01, 14, s7DataLength); // Job, 14 bytes of parameters, data length depends on function
             byte[] parameters = new byte[14];
-            parameters[0] = 0x04; // Read Var function code
-            parameters[1] = 0x01; // Number of items to read
-            parameters[2] = 0x12; // Variable specification for S7 (0x12 means S7 variable)
-            parameters[3] = 0x0A; // Length of following address specification (10 bytes for S7)
+            parameters[0] = (byte)function; // ReadVar (0x04) or WriteVar (0x05)
+            parameters[1] = 0x01; // Number of items
+            parameters[2] = 0x12; // Variable specification for S7
+            parameters[3] = 0x0A; // Length of following address specification
             parameters[4] = 0x10; // Syntax ID for S7Any
-            parameters[5] = transportSize; // Transport size asking what type we want to read
-            parameters[6] = (byte)(dataLength >> 8); parameters[7] = (byte)(dataLength & 0xFF); // Length of data to read
+            parameters[5] = transportSize; // Transport size
+            parameters[6] = (byte)(dataUnitLength >> 8);
+            parameters[7] = (byte)(dataUnitLength & 0xFF); // Length of data unit (units depend on transport: bytes for octet/real, bits otherwise)
             parameters[8] = (byte)(dbNumber >> 8);
             parameters[9] = (byte)(dbNumber & 0xFF); // DB number
-            parameters[10] = 0x84; // DB number specifier
-            int bitAddress = (byteOffset * 8) + bitIndex; // calculate bit address from byte offset and bit index
+            parameters[10] = 0x84; // DB area specifier
+            int bitAddress = (byteOffset * 8) + bitIndex;
             parameters[11] = (byte)((bitAddress >> 16) & 0xFF);
             parameters[12] = (byte)((bitAddress >> 8) & 0xFF);
-            parameters[13] = (byte)(bitAddress & 0xFF); // Address within DB for the bit to read
+            parameters[13] = (byte)(bitAddress & 0xFF);
 
-            //Combine header and parameters into a single PDU
+            // Combine header and parameters into a single PDU
             byte[] pdu = new byte[header.Length + parameters.Length];
             Buffer.BlockCopy(header, 0, pdu, 0, header.Length);
             Buffer.BlockCopy(parameters, 0, pdu, header.Length, parameters.Length);
@@ -166,31 +184,216 @@ namespace SYS8.Core.Protocol
 
             byte returnCode = respPayload[dataHeaderStartIndex];
             byte transportSize = respPayload[dataHeaderStartIndex + 1];
-            ushort bitLen = (ushort)((respPayload[dataHeaderStartIndex + 2] << 8) | respPayload[dataHeaderStartIndex + 3]);
+            ushort lenField = (ushort)((respPayload[dataHeaderStartIndex + 2] << 8) | respPayload[dataHeaderStartIndex + 3]);
 
-            //Check transportSize == S7Types.DataTransport.(type)
-
+            // Check return code
             if (returnCode != 0xFF)
             {
                 throw new Exception($"ReadVar failed, return code: 0x{returnCode:X2}");
             }
 
-            if (bitLen < minimumBitLength)
+            // The length field meaning varies by transport size. For most transport sizes the length is in bits.
+            // For Real and OctetString transport sizes the length field is expressed in bytes.
+            int lengthInBits;
+            int dataBytes;
+            if (transportSize == S7Types.DataTransport.Real || transportSize == S7Types.DataTransport.OctetString)
             {
-                throw new Exception($"ReadVar response indicates less than {minimumBitLength} bits of data.");
-            
+                // lenField contains number of bytes for these transport types
+                dataBytes = lenField;
+                lengthInBits = dataBytes * 8;
+            }
+            else
+            {
+                // lenField contains number of bits
+                lengthInBits = lenField;
+                dataBytes = (lenField + 7) / 8;
             }
 
-            int databyte = (bitLen + 7) / 8; // calculate how many bytes of data are returned for the bits read (should be 1 byte for a single bit)
+            if (lengthInBits < minimumBitLength)
+            {
+                throw new Exception($"ReadVar response indicates less than {minimumBitLength} bits of data.");
+            }
 
-            // check if response contains enough bytes for the data based on bit length 
-            // The data bytes are sent after the 4 bytes.
-            if (respPayload.Length < dataHeaderStartIndex + 4 + databyte)
+            // check if response contains enough bytes for the data based on computed dataBytes
+            // The data bytes are sent after the 4-byte data header.
+            if (respPayload.Length < dataHeaderStartIndex + 4 + dataBytes)
             {
                 throw new Exception("ReadVar response missing data bytes.");
             }
 
             return (paramLength, dataLength, dataHeaderStartIndex);
+        }
+
+        /// <summary>
+        /// Validate a WriteVar response from the PLC.
+        /// Throws an exception when the response is invalid or indicates a failure.
+        /// </summary>
+        /// <param name="respPayload">Full S7 response payload (header + params + data).</param>
+        internal static void ValidateWriteResponse(byte[] respPayload)
+        {
+            if (respPayload == null)
+                throw new ArgumentNullException(nameof(respPayload));
+
+            if (respPayload.Length < 12)
+                throw new Exception("S7 Write response too short.");
+
+            if (respPayload[0] != 0x32)
+                throw new Exception("Invalid S7 protocol ID in write response.");
+
+            if (respPayload[1] != 0x03)
+                throw new Exception($"Unexpected ROSCTR in write response: 0x{respPayload[1]:X2}");
+
+            ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
+            ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
+
+            int pIndex = respPayload.Length - (paramLength + dataLength);
+            if (pIndex < 10 || pIndex + paramLength > respPayload.Length)
+                throw new Exception("WriteVar response parameter block index is invalid.");
+
+            int dIndex = pIndex + paramLength;
+            if (dIndex >= respPayload.Length)
+                throw new Exception("WriteVar response data index out of range.");
+
+            byte returnCode = respPayload[dIndex];
+            if (returnCode != 0xFF)
+                throw new Exception($"WriteVar failed, return code: 0x{returnCode:X2}");
+        }
+
+        /// <summary>
+        /// Build the write-data block (data header + payload) for a WriteVar request.
+        /// </summary>
+        /// <param name="dataTransport">S7 data transport code (from S7Types.DataTransport).</param>
+        /// <param name="length">Length field meaning depends on transport: bytes for Real/OctetString; bits otherwise.</param>
+        /// <param name="payload">Payload bytes to send (raw octets for octet-string or big-endian encoded values).</param>
+        internal static byte[] BuildWriteDataBlock(byte dataTransport, ushort length, byte[] payload)
+        {
+            if (payload == null)
+            {
+                throw new ArgumentNullException(nameof(payload));
+            }
+
+            // Determine expected payload length in bytes based on transport
+            int expectedBytes;
+            if (dataTransport == S7Types.DataTransport.Real || dataTransport == S7Types.DataTransport.OctetString)
+            {
+                expectedBytes = length; // length is in bytes
+            }
+            else
+            {
+                expectedBytes = (length + 7) / 8; // length is in bits
+            }
+
+            if (payload.Length != expectedBytes)
+            {
+                throw new ArgumentException($"Payload length {payload.Length} does not match expected {expectedBytes} for transport 0x{dataTransport:X2} and length {length}.");
+            }
+
+            byte[] data = new byte[4 + payload.Length];
+            data[0] = 0x00; // reserved
+            data[1] = dataTransport;
+            data[2] = (byte)(length >> 8);
+            data[3] = (byte)(length & 0xFF);
+            Buffer.BlockCopy(payload, 0, data, 4, payload.Length); //adding payload after the 4-byte data header
+            return data;
+        }
+
+        internal static byte[] BuildWriteDataBlockFromBool(bool value)
+        {
+            byte[] payload = new byte[1] { value ? (byte)0x01 : (byte)0x00 };
+            return BuildWriteDataBlock(S7Types.DataTransport.Bit, 1, payload);
+        }
+
+        internal static byte[] BuildWriteDataBlockFromInt16(short value)
+        {
+            byte[] payload = new byte[2];
+            payload[0] = (byte)((value >> 8) & 0xFF);
+            payload[1] = (byte)(value & 0xFF);
+            return BuildWriteDataBlock(S7Types.DataTransport.Integer, 16, payload);
+        }
+
+        internal static byte[] BuildWriteDataBlockFromInt32(int value)
+        {
+            byte[] payload = new byte[4];
+            payload[0] = (byte)((value >> 24) & 0xFF);
+            payload[1] = (byte)((value >> 16) & 0xFF);
+            payload[2] = (byte)((value >> 8) & 0xFF);
+            payload[3] = (byte)(value & 0xFF);
+            return BuildWriteDataBlock(S7Types.DataTransport.Integer, 32, payload);
+        }
+
+        internal static byte[] BuildWriteDataBlockFromInt64(long value)
+        {
+            byte[] payload = new byte[8];
+            payload[0] = (byte)((value >> 56) & 0xFF);
+            payload[1] = (byte)((value >> 48) & 0xFF);
+            payload[2] = (byte)((value >> 40) & 0xFF);
+            payload[3] = (byte)((value >> 32) & 0xFF);
+            payload[4] = (byte)((value >> 24) & 0xFF);
+            payload[5] = (byte)((value >> 16) & 0xFF);
+            payload[6] = (byte)((value >> 8) & 0xFF);
+            payload[7] = (byte)(value & 0xFF);
+            // Use octet string for 8-byte payload
+            return BuildWriteDataBlock(S7Types.DataTransport.OctetString, 8, payload);
+        }
+
+        internal static byte[] BuildWriteDataBlockFromUInt16(ushort value)
+        {
+            byte[] payload = new byte[2];
+            payload[0] = (byte)((value >> 8) & 0xFF);
+            payload[1] = (byte)(value & 0xFF);
+            return BuildWriteDataBlock(S7Types.DataTransport.Integer, 16, payload);
+        }
+
+        internal static byte[] BuildWriteDataBlockFromUInt32(uint value)
+        {
+            byte[] payload = new byte[4];
+            payload[0] = (byte)((value >> 24) & 0xFF);
+            payload[1] = (byte)((value >> 16) & 0xFF);
+            payload[2] = (byte)((value >> 8) & 0xFF);
+            payload[3] = (byte)(value & 0xFF);
+            return BuildWriteDataBlock(S7Types.DataTransport.Integer, 32, payload);
+        }
+
+        internal static byte[] BuildWriteDataBlockFromUInt64(ulong value)
+        {
+            byte[] payload = new byte[8];
+            payload[0] = (byte)((value >> 56) & 0xFF);
+            payload[1] = (byte)((value >> 48) & 0xFF);
+            payload[2] = (byte)((value >> 40) & 0xFF);
+            payload[3] = (byte)((value >> 32) & 0xFF);
+            payload[4] = (byte)((value >> 24) & 0xFF);
+            payload[5] = (byte)((value >> 16) & 0xFF);
+            payload[6] = (byte)((value >> 8) & 0xFF);
+            payload[7] = (byte)(value & 0xFF);
+            return BuildWriteDataBlock(S7Types.DataTransport.OctetString, 8, payload);
+        }
+
+        internal static byte[] BuildWriteDataBlockFromFloat(float value)
+        {
+            byte[] bytes = BitConverter.GetBytes(value);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(bytes);
+            return BuildWriteDataBlock(S7Types.DataTransport.Real, 4, bytes);
+        }
+
+        internal static byte[] BuildWriteDataBlockFromDouble(double value)
+        {
+            byte[] bytes = BitConverter.GetBytes(value);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(bytes);
+            return BuildWriteDataBlock(S7Types.DataTransport.Real, 8, bytes);
+        }
+
+        internal static byte[] BuildWriteDataBlockFromString(int maxLength, string value)
+        {
+            if (value == null) value = string.Empty;
+            byte[] strBytes = Encoding.ASCII.GetBytes(value);
+            if (strBytes.Length > maxLength) throw new ArgumentException("String is longer than declared maxLength", nameof(value));
+            byte[] payload = new byte[2 + strBytes.Length];
+            payload[0] = (byte)maxLength; // declared max length
+            payload[1] = (byte)strBytes.Length; // current length
+            Buffer.BlockCopy(strBytes, 0, payload, 2, strBytes.Length);
+            return BuildWriteDataBlock(S7Types.DataTransport.OctetString, (ushort)payload.Length, payload);
         }
     }
 }

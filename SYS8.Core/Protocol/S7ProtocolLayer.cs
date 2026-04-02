@@ -7,6 +7,7 @@ using System.Net.Security;
 using System.Reflection;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace SYS8.Core.Protocol
@@ -30,10 +31,17 @@ namespace SYS8.Core.Protocol
 
 
         /// <summary>
-        /// Must be called once after COTP ConnectAsync().
-        /// Negotiates PDU length with the PLC.
+        /// Perform S7 Setup Communication sequence.
         /// </summary>
-        public async Task SetupCommunicationAsync()
+        /// <remarks>
+        /// Call this once after the underlying COTP connection is established. The method
+        /// sends an S7 "Setup Communication" request and parses the PLC response to
+        /// obtain the negotiated PDU length. The negotiated value is stored in
+        /// <see cref="NegotiatedPduLength"/> and should be used by higher layers when
+        /// building larger PDUs.
+        /// </remarks>
+        /// <returns>A task that completes when setup/negotiation is finished.</returns>
+        public async Task SetupCommunicationAsync(CancellationToken cancellationToken = default)
         {
             //Build S7 Setup Communication request
             //S7 header is 10 bytes, followed by parameters and data
@@ -45,7 +53,7 @@ namespace SYS8.Core.Protocol
 
             //Parameters for Setup Communication
             byte[] parameters = new byte[8];
-            parameters[0] = 0xF0; // Function code for Setup Communication
+            parameters[0] = (byte)FunctionCode.SetupCommunication; // Function code for Setup Communication
             parameters[1] = 0x00; // Reserved
             parameters[2] = 0x00; parameters[3] = 0x01; // Max AMQ caller
             parameters[4] = 0x00; parameters[5] = 0x01; // Max AMQ callee
@@ -63,12 +71,12 @@ namespace SYS8.Core.Protocol
              */
 
             //send via tpkt and cotp layer
-            await _tpktCotp.SendPayloadAsync(s7Pdu);
+            await _tpktCotp.SendPayloadAsync(s7Pdu, cancellationToken);
 
             Debug.WriteLine("S7 Setup Communication request sent, waiting for response...");
 
             //receive response
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             /*
              * From S7-1500: 32-03-00-00-00-01-00-08-00-00-00-00-F0-00-00-01-00-01-00-F0
@@ -126,24 +134,31 @@ namespace SYS8.Core.Protocol
         }
 
 
-        public ushort NegotiatedPduLength => _pduLength; // expose negotiated PDU length obtained from PLC in class to public, so that it can be used by higher layers when building messages
+        /// <summary>
+        /// Negotiated S7 PDU length (in bytes).
+        /// </summary>
+        /// <remarks>
+        /// This value is set by <see cref="SetupCommunicationAsync"/> and represents the
+        /// maximum S7 PDU payload size the PLC agreed to during negotiation.
+        /// </remarks>
+        public ushort NegotiatedPduLength => _pduLength;
 
 
         //TODO: optimize and refine. Possibly create helper function for checking header and params sent from PLC as they are mostly the same
 
         /// <summary>
-        /// Read boolean value from the PLC
+        /// Read a boolean (single bit) from a DB in the PLC.
         /// </summary>
-        /// <param name="dbNumber">Datablock Numbers</param>
-        /// <param name="byteOffset">The index of bytes the user want to read from</param>
-        /// <param name="bitIndex">The index of bit that the user want to read from that byte</param>
-        /// <returns>bool</returns>
-        /// <exception cref="Exception"></exception>
-        public async Task<bool> ReadBoolAsync(ushort dbNumber, int byteOffset, int bitIndex)
+        /// <param name="dbNumber">DB number to read from (DBx).</param>
+        /// <param name="byteOffset">Byte offset inside the DB (DBXn byte index).</param>
+        /// <param name="bitIndex">Bit index inside the byte (0..7).</param>
+        /// <returns>True when the addressed bit is set; otherwise false.</returns>
+        /// <exception cref="Exception">Thrown when the PLC response is invalid or indicates an error.</exception>
+        public async Task<bool> ReadBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
             Debug.WriteLine($"Reading boolean from DB{dbNumber}.DBX{byteOffset}.{bitIndex}...");
 
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Bit, 1); // transport size 0x01 for bit, data length 1 bit
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Bit, 1); // transport size bit, data length 1 byte
 
             Debug.WriteLine("S7 ReadVar request PDU: " + BitConverter.ToString(pdu));
 
@@ -151,11 +166,11 @@ namespace SYS8.Core.Protocol
              * Example: S7 ReadVar request PDU: 32-01-00-00-00-03-00-0E-00-04-04-01-12-0A-10-01-00-01-00-01-84-00-00-00
              */
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
             Debug.WriteLine($"Reading boolean from DB{dbNumber}.DBX{byteOffset}.{bitIndex}...");
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
             Debug.WriteLine("S7 Read response received, validating response...");
@@ -176,22 +191,24 @@ namespace SYS8.Core.Protocol
 
         //TODO: optimize and refine. Possibly create helper function for all Read for checking header and params sent from PLC as they are mostly the same
         /// <summary>
-        /// Read Int (Int 16 bits) value from the PLC
+        /// Read a 16-bit signed integer (INT) from a DB in the PLC.
         /// </summary>
-        /// <param name="dbNumber">Datablock Numbers</param>
-        /// <param name="byteOffset">The index of bytes the user want to read from</param>
-        /// <param name="bitIndex">The index of bit that the user want to read from that byte</param>
-        /// <returns>Int16</returns>
-        public async Task<Int16> ReadInt16Async(ushort dbNumber, int byteOffset, int bitIndex)
+        /// <param name="dbNumber">DB number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types; kept for API symmetry.</param>
+        /// <returns>The 16-bit signed value read from the PLC.</returns>
+        /// <exception cref="Exception">Thrown when the PLC response is invalid or indicates an error.</exception>
+        public async Task<Int16> ReadInt16Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
             // Similar to ReadBoolAsync, but with parameters set for reading a 16-bit integer
             // transport size = 0x05 for INT, 4 data header parameters and data length = 2 bytes
             // The data parsing would also need to be adjusted to read 2 bytes of data and convert it to an Int16 value.
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Int, 2); // transport size 0x05 for all integer, data length 4 bytes
+            // For INT transport, request 2 bytes (the helper will encode the parameter length in bits)
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Int, 2);
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
 
@@ -204,13 +221,23 @@ namespace SYS8.Core.Protocol
         }
 
 
-        public async Task<Int32> ReadInt32Async(ushort dbNumber, int byteOffset, int bitIndex)
+        /// <summary>
+        /// Read a 32-bit signed integer (DINT) from a DB in the PLC.
+        /// </summary>
+        /// <param name="dbNumber">DB number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <returns>The 32-bit signed value read from the PLC.</returns>
+        public async Task<Int32> ReadInt32Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DInt, 4);
+            // DINT: request 4 bytes (helper will set parameter length to 32 bits)
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DInt, 4);
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            Debug.WriteLine($"ReadInt32: DB={dbNumber} Offset={byteOffset} Bit={bitIndex} -> PDU: {BitConverter.ToString(pdu)}");
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            Debug.WriteLine($"ReadInt32 response: {BitConverter.ToString(respPayload)}");
 
             Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
 
@@ -225,23 +252,32 @@ namespace SYS8.Core.Protocol
             return value;
         }
 
-        public async Task<long> ReadInt64Async(ushort dbNumber, int byteOffset, int bitIndex)
+        /// <summary>
+        /// Read a 64-bit signed integer from a DB in the PLC.
+        /// </summary>
+        /// <remarks>
+        /// Implementation requests 8 raw bytes (octet string) from the PLC and combines them
+        /// as big-endian into a signed 64-bit value. The helper uses <see cref="S7Types.ItemTransport.Byte"/>
+        /// to ensure the PLC returns raw octets.
+        /// </remarks>
+        /// <param name="dbNumber">DB number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <returns>The 64-bit signed value read from the PLC.</returns>
+        public async Task<long> ReadInt64Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(
-                dbNumber,
-                byteOffset,
-                bitIndex,
-                S7Types.ItemTransport.DInt,
-                8);
+            // Request raw 8 bytes from the PLC and combine them into a signed 64-bit value.
+            // Use ItemTransport.Byte so the PLC returns the data as an octet string / raw bytes.
+            // 8 bytes requested for 64-bit values; for octet/real transports the helper expects dataUnitLength in bytes
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
 
-            var (_, _, dataHeaderStartIndex) =
-                S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 64);
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 64);
 
             int dataStartIndex = dataHeaderStartIndex + 4;
 
@@ -259,13 +295,21 @@ namespace SYS8.Core.Protocol
         }
 
 
-        public async Task<UInt16> ReadUInt16Async(ushort dbNumber, int byteOffset, int bitIndex)
+        /// <summary>
+        /// Read a 16-bit unsigned integer (WORD/UINT) from a DB in the PLC.
+        /// </summary>
+        /// <param name="dbNumber">DB number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <returns>The 16-bit unsigned value read from the PLC.</returns>
+        public async Task<UInt16> ReadUInt16Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Word, 2);
+            // WORD/UINT: request 2 bytes (helper will set parameter length to 16 bits)
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Word, 2);
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
 
@@ -277,13 +321,21 @@ namespace SYS8.Core.Protocol
 
         }
 
-        public async Task<UInt32> ReadUInt32Async(ushort dbNumber, int byteOffset, int bitIndex)
+        /// <summary>
+        /// Read a 32-bit unsigned integer (DWORD/UDINT) from a DB in the PLC.
+        /// </summary>
+        /// <param name="dbNumber">DB number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <returns>The 32-bit unsigned value read from the PLC.</returns>
+        public async Task<UInt32> ReadUInt32Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DWord, 4); 
+            // DWORD/UDINT: request 4 bytes (helper will set parameter length to 32 bits)
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DWord, 4); 
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
 
@@ -298,18 +350,26 @@ namespace SYS8.Core.Protocol
             return value;
         }
 
-        public async Task<ulong> ReadUInt64Async(ushort dbNumber, int byteOffset, int bitIndex)
+        /// <summary>
+        /// Read a 64-bit unsigned integer from a DB in the PLC.
+        /// </summary>
+        /// <remarks>
+        /// Implementation requests 8 raw bytes (octet string) from the PLC and combines them
+        /// as big-endian into an unsigned 64-bit value. Uses <see cref="S7Types.ItemTransport.Byte"/>.
+        /// </remarks>
+        /// <param name="dbNumber">DB number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <returns>The 64-bit unsigned value read from the PLC.</returns>
+        public async Task<ulong> ReadUInt64Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(
-                dbNumber,
-                byteOffset,
-                bitIndex,
-                S7Types.ItemTransport.DWord,
-                8);
+            // Request 8 raw octets for consistent cross-CPU behavior
+            // 8 bytes requested for 64-bit unsigned
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
 
@@ -331,18 +391,30 @@ namespace SYS8.Core.Protocol
             return value;
         }
 
-        public async Task<float> ReadFloat32Async(ushort dbNumber, int byteOffset, int bitIndex)
+        /// <summary>
+        /// Read a 32-bit floating point value (REAL) from a DB in the PLC.
+        /// </summary>
+        /// <remarks>
+        /// The implementation requests 4 raw bytes and converts them into a IEEE-754
+        /// float. To ensure consistent results across PLCs we request raw octets via
+        /// <see cref="S7Types.ItemTransport.Byte"/> and reinterpret the bytes (big-endian).
+        /// </remarks>
+        /// <param name="dbNumber">DB number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <returns>The 32-bit floating point value read from the PLC.</returns>
+        public async Task<float> ReadFloat32Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(dbNumber, byteOffset, bitIndex,S7Types.ItemTransport.Real, 4);
+            // Request 4 raw bytes (REAL) as octet string to ensure byte-level control
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 4);
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
 
-            var (_, _, dataHeaderStartIndex) =
-                S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 32);
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 32);
 
             int dataStartIndex = dataHeaderStartIndex + 4;
 
@@ -358,12 +430,25 @@ namespace SYS8.Core.Protocol
             return value;
         }
 
-        public async Task<double> ReadFloat64Async(ushort dbNumber, int byteOffset, int bitIndex)
+        /// <summary>
+        /// Read a 64-bit floating point value (LREAL/DOUBLE) from a DB in the PLC.
+        /// </summary>
+        /// <remarks>
+        /// Implementation requests 8 raw bytes and converts them into a double using
+        /// IEEE-754 interpretation. The helper uses raw octet reads to avoid PLC-specific
+        /// length encoding differences.
+        /// </remarks>
+        /// <param name="dbNumber">DB number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <returns>The 64-bit floating point value read from the PLC.</returns>
+        public async Task<double> ReadFloat64Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Real, 8); // or a specific LReal code if you define one
+            // Request 8 raw octets to decode IEEE-754 double consistently
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
 
-            await _tpktCotp.SendPayloadAsync(pdu);
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             var (_, _, dataHeaderStartIndex) =
                 S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 64);
@@ -382,27 +467,31 @@ namespace SYS8.Core.Protocol
             return value;
         }
 
-        public async Task<string> ReadStringAsync(ushort dbNumber, int byteOffset, int maxStringLength)
+        /// <summary>
+        /// Read a Siemens STRING from a DB.
+        /// </summary>
+        /// <remarks>
+        /// Siemens STRING layout: first byte = declared max length, second byte = current length,
+        /// followed by the character bytes. This method requests <c>maxStringLength + 2</c>
+        /// octets and returns the decoded ASCII string.
+        /// </remarks>
+        /// <param name="dbNumber">DB number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="maxStringLength">Maximum expected string length (characters).</param>
+        /// <returns>The decoded string (empty if declared max is 0).</returns>
+        public async Task<string> ReadStringAsync(ushort dbNumber, int byteOffset, int bitIndex, int maxStringLength, CancellationToken cancellationToken = default)
         {
-            byte[] pdu = S7ProtocolHelpers.BuildReadRequest(
-                dbNumber,
-                byteOffset,
-                0,
-                S7Types.ItemTransport.Byte,
-                (ushort)(maxStringLength + 2));
+            // Request as octet string: expected returned length is (maxStringLength + 2) bytes where first byte = declared max and second = current length
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, (ushort)(maxStringLength + 2));
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
             Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
 
-            var (_, _, dataHeaderStartIndex) =
-                S7ProtocolHelpers.ValidateReadResponse(
-                    respPayload,
-                    0x04,
-                    0x01,
-                    (ushort)((maxStringLength + 2) * 8));
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, (ushort)((maxStringLength + 2) * 8));
 
             int dataStartIndex = dataHeaderStartIndex + 4;
 
@@ -433,148 +522,230 @@ namespace SYS8.Core.Protocol
 
 
         /// <summary>
-        /// Write boolean value to PLC
+        /// Write a boolean (single bit) to a DB in the PLC.
         /// </summary>
-        /// <param name="dbNumber">Datablock Numbers</param>
-        /// <param name="byteOffset">The index of bytes the user want to read from</param>
-        /// <param name="bitIndex">The index of bit that the user want to read from that byte</param>
-        /// <param name="value">true or false</param>
-        /// <exception cref="Exception"></exception>
-        //public async Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value)
-        //{
-        //    // Similar to ReadBoolAsync, but with function code for Write Var and including the value in the data section of the message.
-        //    byte[] header = S7ProtocolHelpers.BuildS7Header(0x01, 14, 5); // 4 bytes for data header and 1 byte for the boolean value
-        //    byte[] parameters = new byte[14];
-        //    parameters[0] = 0x05;    // Write Var
-        //    parameters[1] = 0x01;    // 1 item
-
-        //    parameters[2] = 0x12;    // variable spec
-        //    parameters[3] = 0x0A;    // length of address spec (10)
-        //    parameters[4] = 0x10;    // S7ANY
-        //    parameters[5] = S7Types.ItemTransport.Bit;    // transport size = BIT
-
-        //    parameters[6] = 0x00; parameters[7] = 0x01;  // 1 element (1 bit)
-
-        //    parameters[8] = (byte)(dbNumber >> 8);
-        //    parameters[9] = (byte)(dbNumber & 0xFF);    // DB number
-        //    parameters[10] = 0x84;                       // area = DB
-
-        //    int bitAddress = byteOffset * 8 + bitIndex;
-        //    parameters[11] = (byte)((bitAddress >> 16) & 0xFF);
-        //    parameters[12] = (byte)((bitAddress >> 8) & 0xFF);
-        //    parameters[13] = (byte)(bitAddress & 0xFF);
-
-        //    byte[] data = new byte[5];
-        //    data[0] = 0x00; //reserved
-        //    data[1] = 0x01; // transport size = BIT
-        //    data[2] = 0x00; data[3] = 0x01; // bit length = 1
-
-        //    byte valueByte = value ? (byte)0x01 : (byte)0x00; // set to 0x01 if true, 0x00 if false
-        //    data[4] = valueByte;
-
-        //    // Combine and send
-        //    byte[] pdu = new byte[header.Length + parameters.Length + data.Length];
-        //    Buffer.BlockCopy(header, 0, pdu, 0, header.Length);
-        //    Buffer.BlockCopy(parameters, 0, pdu, header.Length, parameters.Length);
-        //    Buffer.BlockCopy(data, 0, pdu, (header.Length + parameters.Length), data.Length);
-
-        //    Debug.WriteLine("S7 WriteVar request PDU: " + BitConverter.ToString(pdu));
-
-        //    await _tpktCotp.SendPayloadAsync(pdu);
-
-        //    Debug.WriteLine($"Writing boolean to DB{dbNumber}.DBX{byteOffset}.{bitIndex}...");
-
-        //    byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
-
-        //    Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
-
-        //    if (respPayload[0] != 0x32 || respPayload[1] != 0x03)
-        //    {
-        //        throw new Exception("Invalid response to WriteVar request.");
-        //    }
-
-        //    ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
-        //    ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
-
-        //    //int pIndex = 12; // parameters start at index 12 (10 bytes header + 2 bytes padding)
-
-        //    // Testing Code
-        //    // Some S7 models (like S7-1500) include 2 bytes of padding between the header and parameters, while others may not.
-        //    // To handle this variety, we calculate the padding dynamically based on the total length of the response and the lengths of the header, parameters, and data as specified in the header.
-        //    // As we know the header is always 10 bytes, and paramLength and dataLength are specified in the header.
-        //    // Initially, we subtract the header length, parameter length, and data length from the total response length to calculate padding, 
-        //    // and then calculate pIndex by adding the header length and padding together.
-        //    // To simplify, we can break down pIndex as 10 + (total length - 10 - paramLength - dataLength) to respPayload.Length - (paramLength + dataLength)
-        //    int pIndex = respPayload.Length - (paramLength + dataLength); // parameters start after header and any padding, which is total length minus param and data length
-
-        //    byte functionCode = respPayload[pIndex];
-        //    if (functionCode != 0x05)
-        //    {
-        //        throw new Exception($"Unexpected function code in write response parameters: 0x{functionCode:X2}");
-        //    }
-
-        //    int dIndex = pIndex + paramLength; // data starts after header and parameters
-        //    byte returnCode = respPayload[dIndex];
-        //    if (returnCode != 0xFF)
-        //    {
-        //        throw new Exception($"WriteVar failed, return code: 0x{returnCode:X2}");
-        //    }
-
-        //}
-
-        public async Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value)
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Bit index inside the byte (0..7).</param>
+        /// <param name="value">Value to write.</param>
+        /// <remarks>
+        /// This method builds a WriteVar request header+parameters via
+        /// <see cref="S7ProtocolHelpers.BuildReadWriteSetupRequest"/>, appends the 4-byte
+        /// data header and payload, and sends the final PDU. The response is validated
+        /// and an exception is thrown if the PLC reports an error.
+        /// </remarks>
+        /// <exception cref="Exception">Thrown when the PLC response indicates a failure.</exception>
+        public async Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value, CancellationToken cancellationToken = default)
         {
-            byte[] header = S7ProtocolHelpers.BuildS7Header(0x01, 14, 5);
-            byte[] parameters = new byte[14];
-            parameters[0] = 0x05; // WriteVar
-            parameters[1] = 0x01; // 1 item
-            parameters[2] = 0x12;
-            parameters[3] = 0x0A;
-            parameters[4] = 0x10; // S7ANY
-            parameters[5] = S7Types.ItemTransport.Bit; // 0x01
-            parameters[6] = 0x00; parameters[7] = 0x01; // 1 bit
-            parameters[8] = (byte)(dbNumber >> 8);
-            parameters[9] = (byte)(dbNumber & 0xFF);
-            parameters[10] = 0x84; // DB area
-            int bitAddress = byteOffset * 8 + bitIndex;
-            parameters[11] = (byte)((bitAddress >> 16) & 0xFF);
-            parameters[12] = (byte)((bitAddress >> 8) & 0xFF);
-            parameters[13] = (byte)(bitAddress & 0xFF);
+            // Build header+parameters for a WriteVar request (item transport = Bit, length = 1)
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Bit, 1);
 
-            byte[] data = new byte[5];
-            data[0] = 0x00; // reserved
-            data[1] = S7Types.DataTransport.Bit; // 0x03 (important)
-            data[2] = 0x00; data[3] = 0x01; // 1 bit
-            data[4] = value ? (byte)0x01 : (byte)0x00;
+            // Use helper to build the write-data block for a boolean value
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromBool(value);
 
-            byte[] pdu = new byte[header.Length + parameters.Length + data.Length];
-            Buffer.BlockCopy(header, 0, pdu, 0, header.Length);
-            Buffer.BlockCopy(parameters, 0, pdu, header.Length, parameters.Length);
-            Buffer.BlockCopy(data, 0, pdu, header.Length + parameters.Length, data.Length);
+            // Concatenate header+parameters and data to form final PDU
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
 
-            await _tpktCotp.SendPayloadAsync(pdu);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync();
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
 
-            if (respPayload.Length < 12 || respPayload[0] != 0x32)
-                throw new Exception("Invalid S7 response to WriteVar.");
+        /// <summary>
+        /// Write a 16-bit signed integer (INT) to a DB in the PLC.
+        /// </summary>
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="value">Value to write.</param>
 
-            if (respPayload[1] != 0x03)
-                throw new Exception($"Unexpected ROSCTR 0x{respPayload[1]:X2} in WriteVar response.");
 
-            ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
-            ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
+        public async Task WriteInt16Async(ushort dbNumber, int byteOffset, int bitIndex, short value, CancellationToken cancellationToken = default)
+        {
+            // INT: request 2 bytes (helper will encode parameter length as 16 bits)
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Int, 2);
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromInt16(value);
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
 
-            int pIndex = respPayload.Length - (paramLength + dataLength);
-            int dIndex = pIndex + paramLength;
+        /// <summary>
+        /// Write a 32-bit signed integer (DINT) to a DB in the PLC.
+        /// </summary>
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="value">Value to write.</param>
+        public async Task WriteInt32Async(ushort dbNumber, int byteOffset, int bitIndex, int value, CancellationToken cancellationToken = default)
+        {
+            // DINT: request 4 bytes (helper will encode parameter length as 32 bits)
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DInt, 4);
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromInt32(value);
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
 
-            if (dIndex >= respPayload.Length)
-                throw new Exception("WriteVar response data index out of range.");
+        /// <summary>
+        /// Write a 64-bit signed integer to a DB in the PLC.
+        /// </summary>
+        /// <remarks>
+        /// Uses an octet-string payload (8 raw bytes) to ensure consistent encoding.
+        /// </remarks>
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="value">Value to write.</param>
+        public async Task WriteInt64Async(ushort dbNumber, int byteOffset, int bitIndex, long value, CancellationToken cancellationToken = default)
+        {
+            // Use octet string payload to write 8 bytes
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromInt64(value);
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
 
-            byte returnCode = respPayload[dIndex];
+        /// <summary>
+        /// Write a 16-bit unsigned integer (WORD/UINT) to a DB in the PLC.
+        /// </summary>
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="value">Value to write.</param>
+        public async Task WriteUInt16Async(ushort dbNumber, int byteOffset, int bitIndex, ushort value, CancellationToken cancellationToken = default)
+        {
+            // WORD/UINT: request 2 bytes (helper will encode parameter length as 16 bits)
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Word, 2);
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromUInt16(value);
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
 
-            if (returnCode != 0xFF)
-                throw new Exception($"WriteVar failed, return code: 0x{returnCode:X2}");
+        /// <summary>
+        /// Write a 32-bit unsigned integer (DWORD/UDINT) to a DB in the PLC.
+        /// </summary>
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="value">Value to write.</param>
+        public async Task WriteUInt32Async(ushort dbNumber, int byteOffset, int bitIndex, uint value, CancellationToken cancellationToken = default)
+        {
+            // DWORD/UDINT: request 4 bytes (helper will encode parameter length as 32 bits)
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DWord, 4);
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromUInt32(value);
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
+
+        /// <summary>
+        /// Write a 64-bit unsigned integer to a DB in the PLC.
+        /// </summary>
+        /// <remarks>
+        /// Uses an octet-string payload (8 raw bytes) to ensure consistent encoding.
+        /// </remarks>
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="value">Value to write.</param>
+        public async Task WriteUInt64Async(ushort dbNumber, int byteOffset, int bitIndex, ulong value, CancellationToken cancellationToken = default)
+        {
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromUInt64(value);
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
+
+        /// <summary>
+        /// Write a 32-bit floating point value (REAL) to a DB in the PLC.
+        /// </summary>
+        /// <remarks>
+        /// Encodes the float as 4 big-endian bytes and sends as an octet-string payload.
+        /// </remarks>
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="value">Value to write.</param>
+        public async Task WriteFloat32Async(ushort dbNumber, int byteOffset, int bitIndex, float value, CancellationToken cancellationToken = default)
+        {
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 4);
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromFloat(value);
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
+
+        /// <summary>
+        /// Write a 64-bit floating point value (LREAL/DOUBLE) to a DB in the PLC.
+        /// </summary>
+        /// <remarks>
+        /// Encodes the double as 8 big-endian bytes and sends as an octet-string payload.
+        /// </remarks>
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="value">Value to write.</param>
+        public async Task WriteFloat64Async(ushort dbNumber, int byteOffset, int bitIndex, double value, CancellationToken cancellationToken = default)
+        {
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromDouble(value);
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
+
+        /// <summary>
+        /// Write a Siemens STRING to a DB.
+        /// </summary>
+        /// <remarks>
+        /// Builds a STRING payload (declared max, current length, data) and writes it as an octet-string.
+        /// </remarks>
+        /// <param name="dbNumber">DB number to write to.</param>
+        /// <param name="byteOffset">Byte offset inside the DB.</param>
+        /// <param name="bitIndex">Ignored for byte-aligned types.</param>
+        /// <param name="maxStringLength">Declared maximum length for the STRING (characters).</param>
+        /// <param name="value">String value to write.</param>
+        public async Task WriteStringAsync(ushort dbNumber, int byteOffset, int bitIndex, int maxStringLength, string value, CancellationToken cancellationToken = default)
+        {
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, (ushort)(maxStringLength + 2));
+            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromString(maxStringLength, value);
+            byte[] pdu = new byte[headerAndParams.Length + data.Length];
+            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
         }
     }
 
