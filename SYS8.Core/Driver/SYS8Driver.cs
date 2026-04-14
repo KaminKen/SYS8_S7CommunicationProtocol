@@ -20,7 +20,6 @@ namespace SYS8.Core.Driver
         private readonly TcpTransport _transport;
         private readonly TpktCotpLayer _tpktCotp;
         private readonly S7ProtocolLayer _s7Protocol;
-        private readonly PublishSubscribeManager _publishSubscribe = new PublishSubscribeManager();
 
         /// <summary>
         /// Indicates whether the underlying TCP transport is currently connected to a remote device.
