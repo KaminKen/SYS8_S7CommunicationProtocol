@@ -7,6 +7,8 @@ namespace SYS8.Core.StringManipulation
     {
         public (ushort dbNumber, int byteOffset, int bitIndex) ParseStringAddress(string address)
         {
+            // DB1.DBX0.0
+
             Debug.WriteLine($"Parsing address: {address}");
 
             string[] parts = address.Split('.');
