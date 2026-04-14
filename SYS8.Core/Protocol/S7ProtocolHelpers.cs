@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Text;
 
@@ -61,14 +61,62 @@ namespace SYS8.Core.Protocol
         /// <param name="dbNumber">Datablock Numbers</param>
         /// <param name="byteOffset">The index of bytes the user want to read/write from</param>
         /// <param name="bitIndex">The index of bit within the byte</param>
-        /// <param name="transportSize">Transport size of data (0x01 for bit, 0x02 for Int16, etc)</param>
-        /// <param name="dataUnitLength">Length of data unit. For Real/OctetString/Byte/Char transports this is in bytes; for other transports (bit/integer) this is in bits.</param>
+        /// <param name="transportSize">S7Any item transport size (written into parameter[5]).</param>
+        /// <param name="dataUnitLength">Requested data size in BYTES for byte-aligned types (BYTE/CHAR/WORD/INT/DWORD/DINT/REAL).
+        /// For BIT this should be the number of bits (normally 1). This method converts to the correct S7Any element count field.</param>
         /// <returns>Combined header+parameters PDU</returns>
         internal static byte[] BuildReadWriteSetupRequest(FunctionCode function, ushort dbNumber, int byteOffset, int bitIndex, byte transportSize, ushort dataUnitLength)
         {
-            // Determine whether the length field is expressed in bytes or bits depending on transportSize.
-            bool lengthInBytes = transportSize == S7Types.ItemTransport.Real || transportSize == S7Types.ItemTransport.Byte || transportSize == S7Types.ItemTransport.Char;
-            int payloadBytes = lengthInBytes ? dataUnitLength : (dataUnitLength + 7) / 8;
+            if (dataUnitLength == 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(dataUnitLength), "Requested length must be > 0.");
+            }
+
+            // S7Any length field (parameter[6..7]) is an ELEMENT COUNT, not a byte count, for most types.
+            // For BIT it is the number of bits; for BYTE/CHAR it is number of bytes.
+            // For WORD/INT it is number of 16-bit elements; for DWORD/DINT/REAL it is number of 32-bit elements.
+            ushort elementCount;
+            int payloadBytes;
+
+            if (transportSize == S7Types.ItemTransport.Bit)
+            {
+                // For BIT, caller passes number of bits (normally 1).
+                elementCount = dataUnitLength;
+                payloadBytes = (dataUnitLength + 7) / 8;
+            }
+            else if (transportSize == S7Types.ItemTransport.Byte || transportSize == S7Types.ItemTransport.Char)
+            {
+                // BYTE/CHAR: caller passes bytes, and elementCount is bytes.
+                elementCount = dataUnitLength;
+                payloadBytes = dataUnitLength;
+            }
+            else if (transportSize == S7Types.ItemTransport.Word || transportSize == S7Types.ItemTransport.Int)
+            {
+                // WORD/INT: caller passes bytes (2 per element).
+                if ((dataUnitLength % 2) != 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(dataUnitLength), "WORD/INT requests must be a multiple of 2 bytes.");
+                }
+                elementCount = (ushort)(dataUnitLength / 2);
+                payloadBytes = dataUnitLength;
+            }
+            else if (transportSize == S7Types.ItemTransport.DWord || transportSize == S7Types.ItemTransport.DInt || transportSize == S7Types.ItemTransport.Real)
+            {
+                // DWORD/DINT/REAL: caller passes bytes (4 per element for these S7Any types).
+                if ((dataUnitLength % 4) != 0)
+                {
+                    throw new ArgumentOutOfRangeException(nameof(dataUnitLength), "DWORD/DINT/REAL requests must be a multiple of 4 bytes.");
+                }
+                elementCount = (ushort)(dataUnitLength / 4);
+                payloadBytes = dataUnitLength;
+            }
+            else
+            {
+                // Unknown/unsupported item transport size; fall back to treating as raw bytes to avoid silently building a malformed PDU.
+                throw new ArgumentOutOfRangeException(nameof(transportSize), $"Unsupported S7Any item transport size: 0x{transportSize:X2}");
+            }
+            
+
 
             // Determine S7 header data length: read requests include no data payload (0),
             // write requests include 4 bytes of data header + payload length in bytes.
@@ -82,8 +130,8 @@ namespace SYS8.Core.Protocol
             parameters[3] = 0x0A; // Length of following address specification
             parameters[4] = 0x10; // Syntax ID for S7Any
             parameters[5] = transportSize; // Transport size
-            parameters[6] = (byte)(dataUnitLength >> 8);
-            parameters[7] = (byte)(dataUnitLength & 0xFF); // Length of data unit (units depend on transport: bytes for octet/real, bits otherwise)
+            parameters[6] = (byte)(elementCount >> 8);
+            parameters[7] = (byte)(elementCount & 0xFF); // Length (element count / bits for BIT)
             parameters[8] = (byte)(dbNumber >> 8);
             parameters[9] = (byte)(dbNumber & 0xFF); // DB number
             parameters[10] = 0x84; // DB area specifier
@@ -240,8 +288,17 @@ namespace SYS8.Core.Protocol
             if (respPayload[0] != 0x32)
                 throw new Exception("Invalid S7 protocol ID in write response.");
 
-            if (respPayload[1] != 0x03)
-                throw new Exception($"Unexpected ROSCTR in write response: 0x{respPayload[1]:X2}");
+            byte rosctr = respPayload[1];
+            if (rosctr == 0x02)
+            {
+                // ACK without data: error class/code are present directly after the 10-byte header.
+                byte errorClass = respPayload.Length > 10 ? respPayload[10] : (byte)0x00;
+                byte errorCode = respPayload.Length > 11 ? respPayload[11] : (byte)0x00;
+                throw new Exception($"WriteVar rejected by PLC (ROSCTR=0x02 ACK). ErrorClass=0x{errorClass:X2}, ErrorCode=0x{errorCode:X2}.");
+            }
+
+            if (rosctr != 0x03)
+                throw new Exception($"Unexpected ROSCTR in write response: 0x{rosctr:X2}");
 
             ushort paramLength = (ushort)((respPayload[6] << 8) | respPayload[7]);
             ushort dataLength = (ushort)((respPayload[8] << 8) | respPayload[9]);
