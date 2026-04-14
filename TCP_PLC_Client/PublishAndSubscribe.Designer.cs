@@ -48,6 +48,7 @@
             ReadCheckButton.TabIndex = 0;
             ReadCheckButton.Text = "Read Check";
             ReadCheckButton.UseVisualStyleBackColor = true;
+            ReadCheckButton.Click += ReadCheckButton_Click;
             // 
             // SubscribeListTextBox
             // 
@@ -109,6 +110,7 @@
             SubscribeButton.TabIndex = 7;
             SubscribeButton.Text = "Subscribe";
             SubscribeButton.UseVisualStyleBackColor = true;
+            SubscribeButton.Click += SubscribeButton_Click;
             // 
             // UnsubscribeButton
             // 
@@ -118,6 +120,7 @@
             UnsubscribeButton.TabIndex = 8;
             UnsubscribeButton.Text = "Unsubscribe";
             UnsubscribeButton.UseVisualStyleBackColor = true;
+            UnsubscribeButton.Click += UnsubscribeButton_Click;
             // 
             // ReadCheckTextBox
             // 

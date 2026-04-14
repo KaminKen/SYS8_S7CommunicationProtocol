@@ -13,16 +13,21 @@ namespace S7CommunicationApp
 {
     public partial class SYS8_PLC_ClientApp : Form
     {
-        private SYS8Driver? _driver;
+        public static SYS8Driver? _driver;
         private bool _isConnected = false;
         private bool isReadAndWrite = true; //false is its publish and subscribe mode, true is its read and write mode
 
-        //PublishAndSubscribe? publishAndSubscribeForm = new PublishAndSubscribe();
+        PublishAndSubscribe? publishAndSubscribeForm = null;
 
         public SYS8_PLC_ClientApp()
         {
             InitializeComponent();
             UpdateControls();
+        }
+
+        public void LogMessage(string message)
+        {
+            LogTextBox.AppendText(message + "\r\n");
         }
 
         private void ReadButtonControls(bool enable)
@@ -51,11 +56,11 @@ namespace S7CommunicationApp
         {
             isReadAndWrite = true;
             LogTextBox.AppendText("Switched to Read/Write mode\r\n");
-            //if (publishAndSubscribeForm != null && !publishAndSubscribeForm.IsDisposed)
-            //{
-            //    publishAndSubscribeForm.Close();
-            //    publishAndSubscribeForm = null;
-            //}
+            if (publishAndSubscribeForm != null && !publishAndSubscribeForm.IsDisposed)
+            {
+                publishAndSubscribeForm.Close();
+                publishAndSubscribeForm = null;
+            }
             UpdateControls();
         }
 
@@ -63,11 +68,11 @@ namespace S7CommunicationApp
         {
             isReadAndWrite = false;
             LogTextBox.AppendText("Switched to Publish/Subscribe mode\r\n");
-            //if (publishAndSubscribeForm == null || publishAndSubscribeForm.IsDisposed)
-            //{
-            //    publishAndSubscribeForm = new PublishAndSubscribe(); //create a new instance of ClientForm if it doesn't exist or has been disposed
-            //    publishAndSubscribeForm.Show();
-            //}
+            if (publishAndSubscribeForm == null || publishAndSubscribeForm.IsDisposed)
+            {
+                publishAndSubscribeForm = new PublishAndSubscribe(this); ; //create a new instance of ClientForm if it doesn't exist or has been disposed
+                publishAndSubscribeForm.Show();
+            }
             UpdateControls();
         }
 
