@@ -23,18 +23,28 @@ namespace SYS8.Core.Driver
         }
 
         public Task Subscribe(string topic, string datatype)
-            => _model.Subscribe(topic, datatype);
+        {
+            return _model.Subscribe(topic, datatype);
+        }
 
         public void Unsubscribe(string topic)
-            => _model.Unsubscribe(topic);
+        {
+            _model.Unsubscribe(topic);
+        }
 
         public void StartPolling(int interval = 1000)
-            => _model.StartPolling(interval);
+        {
+            _model.StartPolling(interval);
+        }
 
         public void StopPolling()
-            => _model.StopPolling();
+        {
+            _model.StopPolling();
+        }
 
         public List<string> GetSubscribedTopics()
-            => _model.GetSubscribedTopics();
+        {
+            return _model.GetSubscribedTopics();
+        }
     }
 }
