@@ -3,52 +3,40 @@
   "WorkspaceRootPath": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\protocol\\s7protocolhelpers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\protocol\\s7protocolhelpers.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\tcp_plc_client\\sys8_plc_clientapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\sys8_plc_clientapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\protocol\\s7protocollayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\protocol\\s7protocollayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\tcp_plc_client\\publishandsubscribe.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\publishandsubscribe.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\tcp_plc_client\\publishandsubscribe.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\publishandsubscribe.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\driver\\sys8monitoring.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\driver\\sys8monitoring.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\pubsub\\publishandsubscribemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\pubsub\\publishandsubscribemodel.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\driver\\sys8driver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\driver\\sys8driver.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\tcp_plc_client\\s7plusnet_clientapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\s7plusnet_clientapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\protocol\\s7protocollayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\protocol\\s7protocollayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\tcp_plc_client\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\program.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\tcp_plc_client\\sys8_plc_clientapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\sys8_plc_clientapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\protocol\\s7types.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\protocol\\s7types.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\tcp_plc_client\\sys8_plc_clientapp.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\sys8_plc_clientapp.designer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\protocol\\functioncode.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\protocol\\functioncode.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\protocol\\tpktcotplayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\protocol\\tpktcotplayer.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\transport\\tcptransport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\transport\\tcptransport.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\sys8.core\\stringmanipulation\\stringaddresstoabsoluteaddress.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9DA0F478-3927-849A-8A52-F00B157F78A8}|SYS8.Core\\SYS8.Core.csproj|solutionrelative:sys8.core\\stringmanipulation\\stringaddresstoabsoluteaddress.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\tcp_plc_client\\publishandsubscribe.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
+      "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\publishandsubscribe.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
     },
     {
       "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\tcp_plc_client\\sys8_plc_clientapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
@@ -57,10 +45,6 @@
     {
       "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\tcp_plc_client\\s7plusnet_clientapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form",
       "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\s7plusnet_clientapp.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}|Form"
-    },
-    {
-      "AbsoluteMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|d:\\systence\\github\\sys8_s7communicationprotocol\\tcp_plc_client\\s7communicationapp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|",
-      "RelativeMoniker": "D:0:0:{45989585-0179-5755-949E-6730615856E4}|TCP_PLC_Client\\S7CommunicationApp.csproj|solutionrelative:tcp_plc_client\\s7communicationapp.csproj||{FA3CD31E-987B-443A-9B81-186104E8DAC1}|"
     }
   ],
   "DocumentGroupContainers": [
@@ -70,183 +54,139 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 6,
+          "SelectedChildIndex": 8,
           "Children": [
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{56df62a4-05a3-4e5b-aa1a-99371ccfb997}"
-            },
-            {
               "$type": "Document",
-              "DocumentIndex": 9,
-              "Title": "TpktCotpLayer.cs",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\TpktCotpLayer.cs",
-              "RelativeDocumentMoniker": "SYS8.Core\\Protocol\\TpktCotpLayer.cs",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\TpktCotpLayer.cs",
-              "RelativeToolTip": "SYS8.Core\\Protocol\\TpktCotpLayer.cs",
-              "ViewState": "AgIAAD4AAAAAAAAAAAAAAC0AAAAQAAAAAAAAAA==",
+              "DocumentIndex": 3,
+              "Title": "SYS8Monitoring.cs",
+              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Driver\\SYS8Monitoring.cs",
+              "RelativeDocumentMoniker": "SYS8.Core\\Driver\\SYS8Monitoring.cs",
+              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Driver\\SYS8Monitoring.cs",
+              "RelativeToolTip": "SYS8.Core\\Driver\\SYS8Monitoring.cs",
+              "ViewState": "AgIAAA0AAAAAAAAAAAAQwCUAAAAsAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-02T02:26:50.897Z",
+              "WhenOpened": "2026-04-14T07:52:44.956Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 10,
-              "Title": "TcpTransport.cs",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Transport\\TcpTransport.cs",
-              "RelativeDocumentMoniker": "SYS8.Core\\Transport\\TcpTransport.cs",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Transport\\TcpTransport.cs",
-              "RelativeToolTip": "SYS8.Core\\Transport\\TcpTransport.cs",
-              "ViewState": "AgIAAGkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-02T02:26:41.587Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 8,
-              "Title": "FunctionCode.cs",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\FunctionCode.cs",
-              "RelativeDocumentMoniker": "SYS8.Core\\Protocol\\FunctionCode.cs",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\FunctionCode.cs",
-              "RelativeToolTip": "SYS8.Core\\Protocol\\FunctionCode.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAkAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-02T01:33:29.007Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 11,
-              "Title": "StringAddressToAbsoluteAddress.cs",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\StringManipulation\\StringAddressToAbsoluteAddress.cs",
-              "RelativeDocumentMoniker": "SYS8.Core\\StringManipulation\\StringAddressToAbsoluteAddress.cs",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\StringManipulation\\StringAddressToAbsoluteAddress.cs",
-              "RelativeToolTip": "SYS8.Core\\StringManipulation\\StringAddressToAbsoluteAddress.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAABcAAAAsAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-04-01T02:50:09.149Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 6,
-              "Title": "S7Types.cs",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\S7Types.cs",
-              "RelativeDocumentMoniker": "SYS8.Core\\Protocol\\S7Types.cs",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\S7Types.cs",
-              "RelativeToolTip": "SYS8.Core\\Protocol\\S7Types.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAADUAAAABAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-30T17:39:54.252Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "S7ProtocolHelpers.cs",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\S7ProtocolHelpers.cs",
-              "RelativeDocumentMoniker": "SYS8.Core\\Protocol\\S7ProtocolHelpers.cs",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\S7ProtocolHelpers.cs",
-              "RelativeToolTip": "SYS8.Core\\Protocol\\S7ProtocolHelpers.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAMAAAAZAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-30T17:17:02.019Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 5,
               "Title": "SYS8Driver.cs",
               "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Driver\\SYS8Driver.cs",
               "RelativeDocumentMoniker": "SYS8.Core\\Driver\\SYS8Driver.cs",
               "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Driver\\SYS8Driver.cs",
               "RelativeToolTip": "SYS8.Core\\Driver\\SYS8Driver.cs",
-              "ViewState": "AgIAABUBAAAAAAAAAAAMwGQAAAAtAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAABUAAAA1AAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T05:01:23.452Z",
+              "WhenOpened": "2026-04-14T07:34:52.329Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 7,
-              "Title": "SYS8_PLC_ClientApp.Designer.cs",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\SYS8_PLC_ClientApp.Designer.cs",
-              "RelativeDocumentMoniker": "TCP_PLC_Client\\SYS8_PLC_ClientApp.Designer.cs",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\SYS8_PLC_ClientApp.Designer.cs",
-              "RelativeToolTip": "TCP_PLC_Client\\SYS8_PLC_ClientApp.Designer.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
+              "DocumentIndex": 8,
+              "Title": "PublishAndSubscribe.cs [Design]",
+              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\PublishAndSubscribe.cs",
+              "RelativeDocumentMoniker": "TCP_PLC_Client\\PublishAndSubscribe.cs",
+              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\PublishAndSubscribe.cs [Design]",
+              "RelativeToolTip": "TCP_PLC_Client\\PublishAndSubscribe.cs [Design]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T04:56:36.617Z",
-              "EditorCaption": ""
+              "WhenOpened": "2026-04-14T07:12:53.506Z",
+              "EditorCaption": " [Design]"
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
-              "Title": "S7PlusNET_ClientApp.cs",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\S7PlusNET_ClientApp.cs",
-              "RelativeDocumentMoniker": "TCP_PLC_Client\\S7PlusNET_ClientApp.cs",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\S7PlusNET_ClientApp.cs",
-              "RelativeToolTip": "TCP_PLC_Client\\S7PlusNET_ClientApp.cs",
-              "ViewState": "AgIAAO0AAAAAAAAAAAAIwBMBAABQAAAAAAAAAA==",
+              "DocumentIndex": 2,
+              "Title": "PublishAndSubscribe.Designer.cs",
+              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\PublishAndSubscribe.Designer.cs",
+              "RelativeDocumentMoniker": "TCP_PLC_Client\\PublishAndSubscribe.Designer.cs",
+              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\PublishAndSubscribe.Designer.cs",
+              "RelativeToolTip": "TCP_PLC_Client\\PublishAndSubscribe.Designer.cs",
+              "ViewState": "AgIAAFwAAAAAAAAAAAAvwHAAAAAkAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T03:18:55.693Z",
+              "WhenOpened": "2026-04-14T07:08:06.731Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 1,
+              "Title": "PublishAndSubscribe.cs",
+              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\PublishAndSubscribe.cs",
+              "RelativeDocumentMoniker": "TCP_PLC_Client\\PublishAndSubscribe.cs",
+              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\PublishAndSubscribe.cs",
+              "RelativeToolTip": "TCP_PLC_Client\\PublishAndSubscribe.cs",
+              "ViewState": "AgIAADEAAAAAAAAAAAAQwDwAAABOAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T06:15:38.709Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 4,
+              "Title": "PublishAndSubscribeModel.cs",
+              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\PubSub\\PublishAndSubscribeModel.cs",
+              "RelativeDocumentMoniker": "SYS8.Core\\PubSub\\PublishAndSubscribeModel.cs",
+              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\PubSub\\PublishAndSubscribeModel.cs",
+              "RelativeToolTip": "SYS8.Core\\PubSub\\PublishAndSubscribeModel.cs",
+              "ViewState": "AgIAACcAAAAAAAAAAAAMwDoAAAAxAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-14T02:48:13.52Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 9,
+              "Title": "SYS8_PLC_ClientApp.cs [Design]",
+              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\SYS8_PLC_ClientApp.cs",
+              "RelativeDocumentMoniker": "TCP_PLC_Client\\SYS8_PLC_ClientApp.cs",
+              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\SYS8_PLC_ClientApp.cs [Design]",
+              "RelativeToolTip": "TCP_PLC_Client\\SYS8_PLC_ClientApp.cs [Design]",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2026-04-03T08:27:53.161Z",
+              "EditorCaption": " [Design]"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 6,
               "Title": "S7ProtocolLayer.cs",
               "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\S7ProtocolLayer.cs",
               "RelativeDocumentMoniker": "SYS8.Core\\Protocol\\S7ProtocolLayer.cs",
               "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\SYS8.Core\\Protocol\\S7ProtocolLayer.cs",
               "RelativeToolTip": "SYS8.Core\\Protocol\\S7ProtocolLayer.cs",
-              "ViewState": "AgIAAFgCAAAAAAAAAAAAADkCAABIAAAAAAAAAA==",
+              "ViewState": "AgIAAAwAAAAAAAAAAAAAAKkAAAAeAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-27T03:11:02.622Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 5,
+              "DocumentIndex": 0,
               "Title": "SYS8_PLC_ClientApp.cs",
               "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\SYS8_PLC_ClientApp.cs",
               "RelativeDocumentMoniker": "TCP_PLC_Client\\SYS8_PLC_ClientApp.cs",
               "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\SYS8_PLC_ClientApp.cs",
               "RelativeToolTip": "TCP_PLC_Client\\SYS8_PLC_ClientApp.cs",
-              "ViewState": "AgIAAOsAAAAAAAAAAAAwwKoAAAAXAAAAAAAAAA==",
+              "ViewState": "AgIAAEcAAAAAAAAAAAAswFQAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-27T02:58:23.38Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 4,
+              "DocumentIndex": 7,
               "Title": "Program.cs",
               "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\Program.cs",
               "RelativeDocumentMoniker": "TCP_PLC_Client\\Program.cs",
               "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\Program.cs",
               "RelativeToolTip": "TCP_PLC_Client\\Program.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAuwA4AAAAOAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAA0AAAAMAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-27T02:54:19.94Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 14,
-              "Title": "S7CommunicationApp.csproj",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\S7CommunicationApp.csproj",
-              "RelativeDocumentMoniker": "TCP_PLC_Client\\S7CommunicationApp.csproj",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\S7CommunicationApp.csproj",
-              "RelativeToolTip": "TCP_PLC_Client\\S7CommunicationApp.csproj",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000758|",
-              "WhenOpened": "2026-03-27T02:54:32.329Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 13,
+              "DocumentIndex": 10,
               "Title": "S7PlusNET_ClientApp.cs [Design]",
               "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\S7PlusNET_ClientApp.cs",
               "RelativeDocumentMoniker": "TCP_PLC_Client\\S7PlusNET_ClientApp.cs",
@@ -254,17 +194,6 @@
               "RelativeToolTip": "TCP_PLC_Client\\S7PlusNET_ClientApp.cs [Design]",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2026-03-27T02:54:14.025Z"
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 12,
-              "Title": "SYS8_PLC_ClientApp.cs [Design]",
-              "DocumentMoniker": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\SYS8_PLC_ClientApp.cs",
-              "RelativeDocumentMoniker": "TCP_PLC_Client\\SYS8_PLC_ClientApp.cs",
-              "ToolTip": "D:\\SYSTENCE\\GitHub\\SYS8_S7CommunicationProtocol\\TCP_PLC_Client\\SYS8_PLC_ClientApp.cs [Design]",
-              "RelativeToolTip": "TCP_PLC_Client\\SYS8_PLC_ClientApp.cs [Design]",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2026-03-27T02:54:01.154Z"
             }
           ]
         }
