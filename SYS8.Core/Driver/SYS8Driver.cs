@@ -20,6 +20,7 @@ namespace SYS8.Core.Driver
         private readonly TcpTransport _transport;
         private readonly TpktCotpLayer _tpktCotp;
         private readonly S7ProtocolLayer _s7Protocol;
+        private readonly PublishSubscribeManager _publishSubscribe = new PublishSubscribeManager();
 
         /// <summary>
         /// Indicates whether the underlying TCP transport is currently connected to a remote device.
@@ -118,10 +119,10 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index within the byte (0..7).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True when the addressed bit is set; otherwise false.</returns>
-        public async Task<bool> ReadBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
+        public async Task<bool> ReadBoolAsync(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadBoolAsync(dbNumber, byteOffset, bitIndex, cancellationToken);
+            return await _s7Protocol.ReadBoolAsync(address, cancellationToken);
         }
 
         /// <summary>
@@ -132,10 +133,10 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Ignored for byte-aligned types; kept for API symmetry.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 16-bit signed value read from the PLC.</returns>
-        public async Task<Int16> ReadInt16Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
+        public async Task<Int16> ReadInt16Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+            return await _s7Protocol.ReadInt16Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -146,10 +147,10 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 32-bit signed value read from the PLC.</returns>
-        public async Task<Int32> ReadInt32Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
+        public async Task<Int32> ReadInt32Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+            return await _s7Protocol.ReadInt32Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -160,10 +161,10 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 64-bit signed value read from the PLC.</returns>
-        public async Task<Int64> ReadInt64Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
+        public async Task<Int64> ReadInt64Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadInt64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+            return await _s7Protocol.ReadInt64Async(address, cancellationToken);
         }
         /// <summary>
         /// Read a 16-bit unsigned integer (WORD/UINT) from a DB in the PLC.
@@ -173,10 +174,10 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 16-bit unsigned value read from the PLC.</returns>
-        public async Task<UInt16> ReadUInt16Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
+        public async Task<UInt16> ReadUInt16Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadUInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+            return await _s7Protocol.ReadUInt16Async(address, cancellationToken);
         }
         /// <summary>
         /// Read a 32-bit unsigned integer (DWORD/UDINT) from a DB in the PLC.
@@ -186,10 +187,10 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 32-bit unsigned value read from the PLC.</returns>
-        public async Task<UInt32> ReadUInt32Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
+        public async Task<UInt32> ReadUInt32Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadUInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+            return await _s7Protocol.ReadUInt32Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -200,10 +201,10 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 64-bit unsigned value read from the PLC.</returns>
-        public async Task<UInt64> ReadUInt64Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
+        public async Task<UInt64> ReadUInt64Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadUInt64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+            return await _s7Protocol.ReadUInt64Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -214,10 +215,10 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 32-bit floating point value read from the PLC.</returns>
-        public async Task<float> ReadFloat32Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
+        public async Task<float> ReadFloat32Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadFloat32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+            return await _s7Protocol.ReadFloat32Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -228,10 +229,10 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 64-bit floating point value read from the PLC.</returns>
-        public async Task<double> ReadFloat64Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
+        public async Task<double> ReadFloat64Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadFloat64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+            return await _s7Protocol.ReadFloat64Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -243,10 +244,10 @@ namespace SYS8.Core.Driver
         /// <param name="maxStringLength">Maximum expected string length (characters).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The decoded string read from the PLC.</returns>
-        public async Task<string> ReadStringAsync(ushort dbNumber, int byteOffset, int bitIndex, int maxStringLength, CancellationToken cancellationToken = default)
+        public async Task<string> ReadStringAsync(string address, int maxStringLength, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            return await _s7Protocol.ReadStringAsync(dbNumber, byteOffset, bitIndex, maxStringLength, cancellationToken);
+            return await _s7Protocol.ReadStringAsync(address, maxStringLength, cancellationToken);
         }
 
 
@@ -258,19 +259,12 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index within the byte (0..7).</param>
         /// <param name="value">Value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteBoolAsync(ushort dbNumber, int byteOffset, int bitIndex, bool value, CancellationToken cancellationToken = default)
+        public async Task WriteBoolAsync(string address, bool value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteBoolAsync(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+            await _s7Protocol.WriteBoolAsync(address, value, cancellationToken);
         }
 
-        /// <summary>
-        /// Write a 16-bit signed integer (INT) to the PLC DB.
-        /// </summary>
-        /// <param name="dbNumber">DB number to write to (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB.</param>
-        /// <param name="bitIndex">Bit index inside the byte (ignored for byte-aligned types).</param>
-        /// <param name="value">Value to write.</param>
         /// <summary>
         /// Write a 16-bit signed integer (INT) to the PLC DB.
         /// </summary>
@@ -279,19 +273,12 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index (ignored for byte-aligned types).</param>
         /// <param name="value">Value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteInt16Async(ushort dbNumber, int byteOffset, int bitIndex, short value, CancellationToken cancellationToken = default)
+        public async Task WriteInt16Async(string address, short value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteInt16Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+            await _s7Protocol.WriteInt16Async(address, value, cancellationToken);
         }
 
-        /// <summary>
-        /// Write a 32-bit signed integer (DINT) to the PLC DB.
-        /// </summary>
-        /// <param name="dbNumber">DB number to write to (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB.</param>
-        /// <param name="bitIndex">Bit index inside the byte (ignored for byte-aligned types).</param>
-        /// <param name="value">Value to write.</param>
         /// <summary>
         /// Write a 32-bit signed integer (DINT) to the PLC DB.
         /// </summary>
@@ -300,19 +287,13 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index (ignored for byte-aligned types).</param>
         /// <param name="value">Value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteInt32Async(ushort dbNumber, int byteOffset, int bitIndex, int value, CancellationToken cancellationToken = default)
+        public async Task WriteInt32Async(string address, int value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteInt32Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+            await _s7Protocol.WriteInt32Async(address, value, cancellationToken);
         }
 
-        /// <summary>
-        /// Write a 64-bit signed integer to the PLC DB.
-        /// </summary>
-        /// <param name="dbNumber">DB number to write to (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB.</param>
-        /// <param name="bitIndex">Bit index inside the byte (ignored for byte-aligned types).</param>
-        /// <param name="value">Value to write.</param>
+
         /// <summary>
         /// Write a 64-bit signed integer to the PLC DB.
         /// </summary>
@@ -321,19 +302,12 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index (ignored for byte-aligned types).</param>
         /// <param name="value">Value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteInt64Async(ushort dbNumber, int byteOffset, int bitIndex, long value, CancellationToken cancellationToken = default)
+        public async Task WriteInt64Async(string address, long value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteInt64Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+            await _s7Protocol.WriteInt64Async(address, value, cancellationToken);
         }
 
-        /// <summary>
-        /// Write a 16-bit unsigned integer (WORD/UINT) to the PLC DB.
-        /// </summary>
-        /// <param name="dbNumber">DB number to write to (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB.</param>
-        /// <param name="bitIndex">Bit index inside the byte (ignored for byte-aligned types).</param>
-        /// <param name="value">Value to write.</param>
         /// <summary>
         /// Write a 16-bit unsigned integer (WORD/UINT) to the PLC DB.
         /// </summary>
@@ -342,19 +316,12 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index (ignored for byte-aligned types).</param>
         /// <param name="value">Value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteUInt16Async(ushort dbNumber, int byteOffset, int bitIndex, ushort value, CancellationToken cancellationToken = default)
+        public async Task WriteUInt16Async(string address, ushort value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteUInt16Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+            await _s7Protocol.WriteUInt16Async(address, value, cancellationToken);
         }
 
-        /// <summary>
-        /// Write a 32-bit unsigned integer (DWORD/UDINT) to the PLC DB.
-        /// </summary>
-        /// <param name="dbNumber">DB number to write to (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB.</param>
-        /// <param name="bitIndex">Bit index inside the byte (ignored for byte-aligned types).</param>
-        /// <param name="value">Value to write.</param>
         /// <summary>
         /// Write a 32-bit unsigned integer (DWORD/UDINT) to the PLC DB.
         /// </summary>
@@ -363,19 +330,12 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index (ignored for byte-aligned types).</param>
         /// <param name="value">Value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteUInt32Async(ushort dbNumber, int byteOffset, int bitIndex, uint value, CancellationToken cancellationToken = default)
+        public async Task WriteUInt32Async(string address, uint value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteUInt32Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+            await _s7Protocol.WriteUInt32Async(address, value, cancellationToken);
         }
 
-        /// <summary>
-        /// Write a 64-bit unsigned integer to the PLC DB.
-        /// </summary>
-        /// <param name="dbNumber">DB number to write to (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB.</param>
-        /// <param name="bitIndex">Bit index inside the byte (ignored for byte-aligned types).</param>
-        /// <param name="value">Value to write.</param>
         /// <summary>
         /// Write a 64-bit unsigned integer (ULINT) to the PLC DB.
         /// </summary>
@@ -384,19 +344,12 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index (ignored for byte-aligned types).</param>
         /// <param name="value">Value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteUInt64Async(ushort dbNumber, int byteOffset, int bitIndex, ulong value, CancellationToken cancellationToken = default)
+        public async Task WriteUInt64Async(string address, ulong value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteUInt64Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+            await _s7Protocol.WriteUInt64Async(address, value, cancellationToken);
         }
 
-        /// <summary>
-        /// Write a 32-bit floating point value (REAL) to the PLC DB.
-        /// </summary>
-        /// <param name="dbNumber">DB number to write to (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB.</param>
-        /// <param name="bitIndex">Bit index inside the byte (ignored for byte-aligned types).</param>
-        /// <param name="value">Value to write.</param>
         /// <summary>
         /// Write a 32-bit floating point value (REAL) to the PLC DB.
         /// </summary>
@@ -405,19 +358,12 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index (ignored for byte-aligned types).</param>
         /// <param name="value">Value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteFloat32Async(ushort dbNumber, int byteOffset, int bitIndex, float value, CancellationToken cancellationToken = default)
+        public async Task WriteFloat32Async(string address, float value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteFloat32Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+            await _s7Protocol.WriteFloat32Async(address, value, cancellationToken);
         }
 
-        /// <summary>
-        /// Write a 64-bit floating point value (LREAL/DOUBLE) to the PLC DB.
-        /// </summary>
-        /// <param name="dbNumber">DB number to write to (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB.</param>
-        /// <param name="bitIndex">Bit index inside the byte (ignored for byte-aligned types).</param>
-        /// <param name="value">Value to write.</param>
         /// <summary>
         /// Write a 64-bit floating point value (LREAL/DOUBLE) to the PLC DB.
         /// </summary>
@@ -426,20 +372,12 @@ namespace SYS8.Core.Driver
         /// <param name="bitIndex">Bit index (ignored for byte-aligned types).</param>
         /// <param name="value">Value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteFloat64Async(ushort dbNumber, int byteOffset, int bitIndex, double value, CancellationToken cancellationToken = default)
+        public async Task WriteFloat64Async(string address, double value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteFloat64Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+            await _s7Protocol.WriteFloat64Async(address, value, cancellationToken);
         }
 
-        /// <summary>
-        /// Write a Siemens STRING to the PLC DB.
-        /// </summary>
-        /// <param name="dbNumber">DB number to write to (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB.</param>
-        /// <param name="bitIndex">Bit index inside the byte (ignored for byte-aligned types).</param>
-        /// <param name="maxStringLength">Declared maximum length for the STRING (characters).</param>
-        /// <param name="value">String value to write.</param>
         /// <summary>
         /// Write a Siemens STRING into a DB.
         /// </summary>
@@ -449,10 +387,17 @@ namespace SYS8.Core.Driver
         /// <param name="maxStringLength">Declared maximum length for the STRING (characters).</param>
         /// <param name="value">String value to write.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteStringAsync(ushort dbNumber, int byteOffset, int bitIndex, int maxStringLength, string value, CancellationToken cancellationToken = default)
+        public async Task WriteStringAsync(string address, int maxStringLength, string value, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
-            await _s7Protocol.WriteStringAsync(dbNumber, byteOffset, bitIndex, maxStringLength, value, cancellationToken);
+            await _s7Protocol.WriteStringAsync(address, maxStringLength, value, cancellationToken);
         }
+
+        //public async Task Subscribe(string absoluteAddress) 
+        //{
+        //    EnsureConnected();
+        //    await _publishSubscribe.SubscribeAsync(absoluteAddress);
+        //}
+
     }
 }

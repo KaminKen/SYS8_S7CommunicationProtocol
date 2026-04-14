@@ -45,6 +45,10 @@
             WriteButton = new Button();
             DataTextBox = new TextBox();
             DataTextBoxLabel = new Label();
+            PublishAndSubscribeModeButton = new Button();
+            ReadWriteModeButton = new Button();
+            ModeLabel = new Label();
+            ModeStatusTextBox = new TextBox();
             SuspendLayout();
             // 
             // IpTextBox
@@ -87,6 +91,7 @@
             LogTextBox.Multiline = true;
             LogTextBox.Name = "LogTextBox";
             LogTextBox.ReadOnly = true;
+            LogTextBox.ScrollBars = ScrollBars.Vertical;
             LogTextBox.Size = new Size(561, 364);
             LogTextBox.TabIndex = 4;
             // 
@@ -130,7 +135,7 @@
             // 
             // AddressTextBox
             // 
-            AddressTextBox.Location = new Point(700, 142);
+            AddressTextBox.Location = new Point(700, 237);
             AddressTextBox.Name = "AddressTextBox";
             AddressTextBox.PlaceholderText = "DB1.DBX0.0";
             AddressTextBox.Size = new Size(400, 31);
@@ -139,7 +144,7 @@
             // AddressLabel
             // 
             AddressLabel.AutoSize = true;
-            AddressLabel.Location = new Point(700, 105);
+            AddressLabel.Location = new Point(700, 209);
             AddressLabel.Name = "AddressLabel";
             AddressLabel.Size = new Size(162, 25);
             AddressLabel.TabIndex = 10;
@@ -149,8 +154,8 @@
             // 
             DataTypeComBox.AutoCompleteMode = AutoCompleteMode.Suggest;
             DataTypeComBox.FormattingEnabled = true;
-            DataTypeComBox.Items.AddRange(new object[] { "Bool", "Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Float32", "Float64" });
-            DataTypeComBox.Location = new Point(700, 237);
+            DataTypeComBox.Items.AddRange(new object[] { "Bool", "Int16", "Int32", "Int64", "UInt16", "UInt32", "UInt64", "Float32", "Float64", "String" });
+            DataTypeComBox.Location = new Point(700, 314);
             DataTypeComBox.Name = "DataTypeComBox";
             DataTypeComBox.Size = new Size(400, 33);
             DataTypeComBox.TabIndex = 11;
@@ -158,7 +163,7 @@
             // DataTypeLabel
             // 
             DataTypeLabel.AutoSize = true;
-            DataTypeLabel.Location = new Point(700, 209);
+            DataTypeLabel.Location = new Point(700, 286);
             DataTypeLabel.Name = "DataTypeLabel";
             DataTypeLabel.Size = new Size(95, 25);
             DataTypeLabel.TabIndex = 12;
@@ -186,26 +191,71 @@
             // 
             // DataTextBox
             // 
-            DataTextBox.Location = new Point(700, 327);
+            DataTextBox.Location = new Point(700, 392);
             DataTextBox.Multiline = true;
             DataTextBox.Name = "DataTextBox";
-            DataTextBox.Size = new Size(400, 234);
+            DataTextBox.ScrollBars = ScrollBars.Vertical;
+            DataTextBox.Size = new Size(400, 169);
             DataTextBox.TabIndex = 15;
             // 
             // DataTextBoxLabel
             // 
             DataTextBoxLabel.AutoSize = true;
-            DataTextBoxLabel.Location = new Point(700, 299);
+            DataTextBoxLabel.Location = new Point(700, 364);
             DataTextBoxLabel.Name = "DataTextBoxLabel";
             DataTextBoxLabel.Size = new Size(58, 25);
             DataTextBoxLabel.TabIndex = 16;
             DataTextBoxLabel.Text = "Data: ";
+            // 
+            // PublishAndSubscribeModeButton
+            // 
+            PublishAndSubscribeModeButton.AccessibleRole = AccessibleRole.None;
+            PublishAndSubscribeModeButton.Location = new Point(700, 140);
+            PublishAndSubscribeModeButton.Name = "PublishAndSubscribeModeButton";
+            PublishAndSubscribeModeButton.Size = new Size(194, 34);
+            PublishAndSubscribeModeButton.TabIndex = 17;
+            PublishAndSubscribeModeButton.Text = "Publish and Subscribe";
+            PublishAndSubscribeModeButton.UseVisualStyleBackColor = true;
+            PublishAndSubscribeModeButton.Click += PublishAndSubscribeModeButton_Click;
+            // 
+            // ReadWriteModeButton
+            // 
+            ReadWriteModeButton.AccessibleRole = AccessibleRole.None;
+            ReadWriteModeButton.Location = new Point(906, 140);
+            ReadWriteModeButton.Name = "ReadWriteModeButton";
+            ReadWriteModeButton.Size = new Size(194, 34);
+            ReadWriteModeButton.TabIndex = 18;
+            ReadWriteModeButton.Text = "Read/Write";
+            ReadWriteModeButton.UseVisualStyleBackColor = true;
+            ReadWriteModeButton.Click += ReadWriteModeButton_Click;
+            // 
+            // ModeLabel
+            // 
+            ModeLabel.AutoSize = true;
+            ModeLabel.Location = new Point(700, 111);
+            ModeLabel.Name = "ModeLabel";
+            ModeLabel.Size = new Size(68, 25);
+            ModeLabel.TabIndex = 19;
+            ModeLabel.Text = "Mode: ";
+            // 
+            // ModeStatusTextBox
+            // 
+            ModeStatusTextBox.Location = new Point(774, 108);
+            ModeStatusTextBox.Name = "ModeStatusTextBox";
+            ModeStatusTextBox.ReadOnly = true;
+            ModeStatusTextBox.Size = new Size(326, 31);
+            ModeStatusTextBox.TabIndex = 20;
+            ModeStatusTextBox.Text = "Read/Write";
             // 
             // SYS8_PLC_ClientApp
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(1204, 660);
+            Controls.Add(ModeStatusTextBox);
+            Controls.Add(ModeLabel);
+            Controls.Add(ReadWriteModeButton);
+            Controls.Add(PublishAndSubscribeModeButton);
             Controls.Add(DataTextBoxLabel);
             Controls.Add(DataTextBox);
             Controls.Add(WriteButton);
@@ -248,5 +298,9 @@
         private Button WriteButton;
         private TextBox DataTextBox;
         private Label DataTextBoxLabel;
+        private Button PublishAndSubscribeModeButton;
+        private Button ReadWriteModeButton;
+        private Label ModeLabel;
+        private TextBox ModeStatusTextBox;
     }
 }
