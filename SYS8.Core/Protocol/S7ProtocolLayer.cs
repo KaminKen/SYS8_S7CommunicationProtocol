@@ -164,6 +164,13 @@ namespace SYS8.Core.Protocol
             return parser.ParseStringAddress(address);
         }
 
+        private string ConvertToAbsoluteAddress(ushort dbNumber, int byteOffset, int bitIndex)
+        {
+            var parser = new StringAddressToAbsoluteAddress();
+            return parser.ConvertToAbsoluteAddress(dbNumber, byteOffset, bitIndex);
+        }
+
+
         /// <summary>
         /// Read a single boolean (bit) from a DB specified by a textual address.
         /// The address is parsed (for example "DB1.DBX0.1") and the request is delegated
@@ -665,6 +672,23 @@ namespace SYS8.Core.Protocol
             string value = Encoding.ASCII.GetString(stringBytes);
             return value;
         }
+
+        public async Task<string> WriteBoolArrayAsync(string address, bool value, uint length, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            int initialOffset = byteOffset * 8 + bitIndex;
+            int localByteOffset = byteOffset ;
+            int localBitIndex = bitIndex;
+            for (int i = initialOffset; i < initialOffset + length; i++)
+            {
+                localByteOffset = i / 8;
+                localBitIndex = i % 8;
+                await WriteBoolAsync(dbNumber, localByteOffset, localBitIndex, value, cancellationToken);
+            }
+            return ConvertToAbsoluteAddress(dbNumber, localByteOffset, localBitIndex);
+        }
+
+
 
         /// <summary>
         /// Write a boolean (single bit) to a DB specified by a textual address.

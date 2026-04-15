@@ -29,7 +29,7 @@ internal static class S7Types
         // Used for REAL (4 bytes) and LREAL (8 bytes),
         // the element length (4 vs 8) tells the PLC which you want.
         public const byte Real = 0x08;
-        public const byte LReal = 0x09;
+        public const byte LReal = 0x0A;
     }
 
     /// <summary>
