@@ -15,18 +15,21 @@ internal static class S7Types
         public const byte Byte = 0x02;
         public const byte Char = 0x03;
 
-        // 16-bit integer family
-        public const byte Word = 0x04; // 16-bit unsigned (WORD / UINT)
-        public const byte Int = 0x05; // 16-bit signed   (INT)
+        // 16-bit: WORD/UINT and INT are the same 2 bytes on the wire; S7ANY uses one transport code for this size class.
+        //public const byte Word = 0x04;
+        public const byte Word = 0x05; // WORD / UINT (same encoding as INT for DB bit-addressed access) - obtained from reverse engineering and trial and error
+        public const byte Int = 0x05;  // INT
 
-        // 32-bit integer family
-        public const byte DWord = 0x06; // 32-bit unsigned (DWORD / UDINT)
-        public const byte DInt = 0x07; // 32-bit signed   (DINT)
+        // 32-bit: DWORD/UDINT and DINT are the same 4 bytes on the wire for raw DB access.
+        //public const byte DWord = 0x06;
+        public const byte DWord = 0x07; // DWORD / UDINT (same encoding as DINT for DB access) - obtained from reverse engineering and trial and error
+        public const byte DInt = 0x07;  // DINT
 
         // Floating point family
         // Used for REAL (4 bytes) and LREAL (8 bytes),
         // the element length (4 vs 8) tells the PLC which you want.
         public const byte Real = 0x08;
+        public const byte LReal = 0x09;
     }
 
     /// <summary>

@@ -725,7 +725,7 @@ namespace SYS8.Core.Protocol
         /// Write a 32-bit floating point value (REAL) to a DB in the PLC.
         /// </summary>
         /// <remarks>
-        /// Encodes the float as 4 big-endian bytes and sends as an octet-string payload.
+        /// Uses S7ANY REAL transport with a BREAL (0x07) data block and big-endian IEEE-754 payload.
         /// </remarks>
         /// <param name="dbNumber">DB number to write to.</param>
         /// <param name="byteOffset">Byte offset inside the DB.</param>
@@ -734,7 +734,8 @@ namespace SYS8.Core.Protocol
         public async Task WriteFloat32Async(string address, float value, CancellationToken cancellationToken = default)
         {
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
-            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 4);
+            // S7ANY transport REAL (0x08) must match the write data block (DataTransport.Real / BREAL).
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Real, 4);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromFloat(value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
             Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
@@ -748,7 +749,7 @@ namespace SYS8.Core.Protocol
         /// Write a 64-bit floating point value (LREAL/DOUBLE) to a DB in the PLC.
         /// </summary>
         /// <remarks>
-        /// Encodes the double as 8 big-endian bytes and sends as an octet-string payload.
+        /// Uses S7ANY BYTE transport for 8 bytes with an octet-string data block (BREAL is only for 4-byte REAL).
         /// </remarks>
         /// <param name="dbNumber">DB number to write to.</param>
         /// <param name="byteOffset">Byte offset inside the DB.</param>
@@ -757,7 +758,7 @@ namespace SYS8.Core.Protocol
         public async Task WriteFloat64Async(string address, double value, CancellationToken cancellationToken = default)
         {
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
-            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
+            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.LReal, 8);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromDouble(value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
             Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);

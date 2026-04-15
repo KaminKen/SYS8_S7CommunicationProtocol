@@ -100,7 +100,7 @@ namespace SYS8.Core.Protocol
                 elementCount = (ushort)(dataUnitLength / 2);
                 payloadBytes = dataUnitLength;
             }
-            else if (transportSize == S7Types.ItemTransport.DWord || transportSize == S7Types.ItemTransport.DInt || transportSize == S7Types.ItemTransport.Real)
+            else if (transportSize == S7Types.ItemTransport.DWord || transportSize == S7Types.ItemTransport.DInt || transportSize == S7Types.ItemTransport.Real || transportSize == S7Types.ItemTransport.LReal)
             {
                 // DWORD/DINT/REAL: caller passes bytes (4 per element for these S7Any types).
                 if ((dataUnitLength % 4) != 0)
@@ -438,7 +438,8 @@ namespace SYS8.Core.Protocol
             byte[] bytes = BitConverter.GetBytes(value);
             if (BitConverter.IsLittleEndian)
                 Array.Reverse(bytes);
-            return BuildWriteDataBlock(S7Types.DataTransport.Real, 8, bytes);
+            // LREAL is 8 bytes; S7 BREAL (0x07) is for 4-byte REAL. Use octet string like other 8-byte raw writes.
+            return BuildWriteDataBlock(S7Types.DataTransport.OctetString, 8, bytes); //Changed from Real to OctetString
         }
 
         internal static byte[] BuildWriteDataBlockFromString(int maxLength, string value)
