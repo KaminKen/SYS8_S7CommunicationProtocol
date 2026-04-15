@@ -37,6 +37,12 @@ namespace SYS8.Core.PubSub
             return parser.ParseStringAddress(address);
         }
 
+        private string ConvertToAbsoluteAddress(ushort dbNumber, int byteOffset, int bitIndex)
+        {
+            var parser = new StringAddressToAbsoluteAddress();
+            return parser.ConvertToAbsoluteAddress(dbNumber, byteOffset, bitIndex);
+        }
+
         public void StartPolling(int interval = 1000)
         {
             if (_pollingCts != null)
@@ -111,7 +117,7 @@ namespace SYS8.Core.PubSub
             _previousValues[topic] = initialValue;
         }
 
-        public async Task SubscribeArray(string? topic, uint length, string? datatype) // , Action<string, object> callback
+        public async Task<string> SubscribeArray(string? topic, uint length, string? datatype) // , Action<string, object> callback
         {
             if (string.IsNullOrEmpty(topic) || string.IsNullOrEmpty(datatype))
             {
@@ -127,11 +133,13 @@ namespace SYS8.Core.PubSub
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(topic);
 
             int initialOffset = byteOffset * 8 + bitIndex;
+            int localByteOffset = byteOffset ;
+            int localBitIndex = bitIndex;
             for (int i = initialOffset; i < initialOffset + length; i++)
             { 
-                int localByteOffset = i / 8;
-                int localBitIndex = i % 8;
-                string tempTopic = "DB" + dbNumber + ".DBX" + localByteOffset + "." + localBitIndex;
+                localByteOffset = i / 8;
+                localBitIndex = i % 8;
+                string tempTopic = ConvertToAbsoluteAddress(dbNumber, localByteOffset, localBitIndex);
 
                 if (_previousValues.ContainsKey(tempTopic))
                 {
@@ -153,6 +161,7 @@ namespace SYS8.Core.PubSub
                 };
                 _previousValues[tempTopic] = initialValue;
             }
+            return ConvertToAbsoluteAddress(dbNumber, localByteOffset, localBitIndex); //last topic in the array, can be used for unsubscribing the whole array later 
         }
 
 
