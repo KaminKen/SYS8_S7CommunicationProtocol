@@ -426,7 +426,7 @@ namespace SYS8.Core.Protocol
         {
             // Request 4 raw bytes (REAL) as octet string to ensure byte-level control
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
-            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 4);
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Real, 4);
 
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
 
