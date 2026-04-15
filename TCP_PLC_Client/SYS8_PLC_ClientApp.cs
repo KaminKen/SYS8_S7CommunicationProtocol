@@ -7,6 +7,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Text;
 using System.Windows.Forms;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 
 namespace S7CommunicationApp
@@ -177,7 +178,7 @@ namespace S7CommunicationApp
                     case "String":
                         // Attempt to read up to 256 characters unless the Data textbox contains a smaller max length
                         int maxRead = 256;
-                        if (int.TryParse(DataTextBox.Text, out int userMax) && userMax > 0)
+                        if (int.TryParse(AddressTextBox.Text, out int userMax) && userMax > 0)
                             maxRead = userMax;
                         string readString = await _driver.ReadStringAsync(AddressTextBox.Text, maxRead, cts.Token);
                         LogTextBox.AppendText($"Read String from {AddressTextBox.Text}: '{readString}'\r\n");
@@ -198,6 +199,81 @@ namespace S7CommunicationApp
         }
 
 
+        private async void WriteData(SYS8Driver _driver, string datatype, string data, string address)
+        {
+            // Use a short timeout to avoid UI hangs; callers can pass explicit CancellationToken if needed
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
+            
+
+            switch (datatype)
+            {
+                case "bool":
+                    if (!bool.TryParse(data, out bool writeBool))
+                        throw new Exception("Invalid value for Bool. Please enter 'true' or 'false' in the Data textbox.");
+                    await _driver.WriteBoolAsync(address, writeBool, cts.Token);
+                    LogTextBox.AppendText($"Wrote Bool to {address}: {writeBool}\r\n");
+                    break;
+                case "int16":
+                    if (!short.TryParse(data, out short writeInt16))
+                        throw new Exception("Invalid Int16 value.");
+                    await _driver.WriteInt16Async(address, writeInt16, cts.Token);
+                    LogTextBox.AppendText($"Wrote Int16 to {address}: {writeInt16}\r\n");
+                    break;
+                case "int32":
+                    if (!int.TryParse(data, out int writeInt32))
+                        throw new Exception("Invalid Int32 value.");
+                    await _driver.WriteInt32Async(address, writeInt32, cts.Token);
+                    LogTextBox.AppendText($"Wrote Int32 to {address}: {writeInt32}\r\n");
+                    break;
+                case "int64":
+                    if (!long.TryParse(data, out long writeInt64))
+                        throw new Exception("Invalid Int64 value.");
+                    await _driver.WriteInt64Async(address, writeInt64, cts.Token);
+                    LogTextBox.AppendText($"Wrote Int64 to {address}: {writeInt64}\r\n");
+                    break;
+                case "uint16":
+                    if (!ushort.TryParse(data, out ushort writeUInt16))
+                        throw new Exception("Invalid UInt16 value.");
+                    await _driver.WriteUInt16Async(address, writeUInt16, cts.Token);
+                    LogTextBox.AppendText($"Wrote UInt16 to {address}: {writeUInt16}\r\n");
+                    break;
+                case "uint32":
+                    if (!uint.TryParse(data, out uint writeUInt32))
+                        throw new Exception("Invalid UInt32 value.");
+                    await _driver.WriteUInt32Async(address, writeUInt32, cts.Token);
+                    LogTextBox.AppendText($"Wrote UInt32 to {address}: {writeUInt32}\r\n");
+                    break;
+                case "uint64":
+                    if (!ulong.TryParse(data, out ulong writeUInt64))
+                        throw new Exception("Invalid UInt64 value.");
+                    await _driver.WriteUInt64Async(address, writeUInt64, cts.Token);
+                    LogTextBox.AppendText($"Wrote UInt64 to {address}: {writeUInt64}\r\n");
+                    break;
+                case "float32":
+                    if (!float.TryParse(data, out float writeFloat32))
+                        throw new Exception("Invalid Float32 value.");
+                    await _driver.WriteFloat32Async(address, writeFloat32, cts.Token);
+                    LogTextBox.AppendText($"Wrote Float32 to {address}: {writeFloat32}\r\n");
+                    break;
+                case "float64":
+                    if (!double.TryParse(data, out double writeFloat64))
+                        throw new Exception("Invalid Float64 value.");
+                    await _driver.WriteFloat64Async(address, writeFloat64, cts.Token);
+                    LogTextBox.AppendText($"Wrote Float64 to {address}: {writeFloat64}\r\n");
+                    break;
+                case "string":
+                    string text = data ?? string.Empty;
+                    int maxLen = Math.Max(text.Length, 1); // declare at least current length
+                    await _driver.WriteStringAsync(address, maxLen, text, cts.Token);
+                    LogTextBox.AppendText($"Wrote String to {address}: '{text}' (max {maxLen})\r\n");
+                    break;
+                default:
+                    throw new Exception("Please select a supported data type from the dropdown.");
+            
+            }
+        }
+
+
         private async void WriteButton_Click(object sender, EventArgs e)
         {
             Stopwatch sw = new Stopwatch();
@@ -211,78 +287,35 @@ namespace S7CommunicationApp
                 if (string.IsNullOrWhiteSpace(AddressTextBox.Text))
                     throw new Exception("Address is required.");
 
-                string datatype = DataTypeComBox.SelectedItem?.ToString() ?? DataTypeComBox.Text;
+                string datatype = (DataTypeComBox.SelectedItem?.ToString() ?? DataTypeComBox.Text).ToLower();
 
                 //var (dbNumber, byteOffset, bitIndex) = _driver.ParseStringAddress(AddressTextBox.Text);
 
-                // Use a short timeout to avoid UI hangs; callers can pass explicit CancellationToken if needed
-                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
 
-                switch (datatype)
+                int length = 1;
+                if (!string.IsNullOrEmpty(LengthTextBox.Text)) 
                 {
-                    case "Bool":
+                    length  = int.Parse(LengthTextBox.Text); 
+                }
+
+                if (length == 1)
+                {
+                    WriteData(_driver, datatype, DataTextBox.Text, AddressTextBox.Text);
+                }
+                else 
+                {
+                    using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    if (datatype == "bool")
+                    {
                         if (!bool.TryParse(DataTextBox.Text, out bool writeBool))
                             throw new Exception("Invalid value for Bool. Please enter 'true' or 'false' in the Data textbox.");
-                        await _driver.WriteBoolAsync(AddressTextBox.Text, writeBool, cts.Token);
+                        string lastTopic = await _driver.WriteBoolArrayAsync(AddressTextBox.Text, writeBool, (uint)length, cts.Token);
                         LogTextBox.AppendText($"Wrote Bool to {AddressTextBox.Text}: {writeBool}\r\n");
-                        break;
-                    case "Int16":
-                        if (!short.TryParse(DataTextBox.Text, out short writeInt16))
-                            throw new Exception("Invalid Int16 value.");
-                        await _driver.WriteInt16Async(AddressTextBox.Text, writeInt16, cts.Token);
-                        LogTextBox.AppendText($"Wrote Int16 to {AddressTextBox.Text}: {writeInt16}\r\n");
-                        break;
-                    case "Int32":
-                        if (!int.TryParse(DataTextBox.Text, out int writeInt32))
-                            throw new Exception("Invalid Int32 value.");
-                        await _driver.WriteInt32Async(AddressTextBox.Text, writeInt32, cts.Token);
-                        LogTextBox.AppendText($"Wrote Int32 to {AddressTextBox.Text}: {writeInt32}\r\n");
-                        break;
-                    case "Int64":
-                        if (!long.TryParse(DataTextBox.Text, out long writeInt64))
-                            throw new Exception("Invalid Int64 value.");
-                        await _driver.WriteInt64Async(AddressTextBox.Text, writeInt64, cts.Token);
-                        LogTextBox.AppendText($"Wrote Int64 to {AddressTextBox.Text}: {writeInt64}\r\n");
-                        break;
-                    case "UInt16":
-                        if (!ushort.TryParse(DataTextBox.Text, out ushort writeUInt16))
-                            throw new Exception("Invalid UInt16 value.");
-                        await _driver.WriteUInt16Async(AddressTextBox.Text, writeUInt16, cts.Token);
-                        LogTextBox.AppendText($"Wrote UInt16 to {AddressTextBox.Text}: {writeUInt16}\r\n");
-                        break;
-                    case "UInt32":
-                        if (!uint.TryParse(DataTextBox.Text, out uint writeUInt32))
-                            throw new Exception("Invalid UInt32 value.");
-                        await _driver.WriteUInt32Async(AddressTextBox.Text, writeUInt32, cts.Token);
-                        LogTextBox.AppendText($"Wrote UInt32 to {AddressTextBox.Text}: {writeUInt32}\r\n");
-                        break;
-                    case "UInt64":
-                        if (!ulong.TryParse(DataTextBox.Text, out ulong writeUInt64))
-                            throw new Exception("Invalid UInt64 value.");
-                        await _driver.WriteUInt64Async(AddressTextBox.Text, writeUInt64, cts.Token);
-                        LogTextBox.AppendText($"Wrote UInt64 to {AddressTextBox.Text}: {writeUInt64}\r\n");
-                        break;
-                    case "Float32":
-                        if (!float.TryParse(DataTextBox.Text, out float writeFloat32))
-                            throw new Exception("Invalid Float32 value.");
-                        await _driver.WriteFloat32Async(AddressTextBox.Text, writeFloat32, cts.Token);
-                        LogTextBox.AppendText($"Wrote Float32 to {AddressTextBox.Text}: {writeFloat32}\r\n");
-                        break;
-                    case "Float64":
-                        if (!double.TryParse(DataTextBox.Text, out double writeFloat64))
-                            throw new Exception("Invalid Float64 value.");
-                        await _driver.WriteFloat64Async(AddressTextBox.Text, writeFloat64, cts.Token);
-                        LogTextBox.AppendText($"Wrote Float64 to {AddressTextBox.Text}: {writeFloat64}\r\n");
-                        break;
-                    case "String":
-                        string text = DataTextBox.Text ?? string.Empty;
-                        int maxLen = Math.Max(text.Length, 1); // declare at least current length
-                        await _driver.WriteStringAsync(AddressTextBox.Text, maxLen, text, cts.Token);
-                        LogTextBox.AppendText($"Wrote String to {AddressTextBox.Text}: '{text}' (max {maxLen})\r\n");
-                        break;
-                    default:
-                        throw new Exception("Please select a supported data type from the dropdown.");
+                        LogTextBox.AppendText($"Last topic: {lastTopic}\r\n");
+                    }
                 }
+
+                
             }
             catch (Exception ex)
             {

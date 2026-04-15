@@ -651,5 +651,19 @@ namespace SYS8.Core.Driver
             await _s7Protocol.WriteStringAsync(dbNumber, byteOffset, bitIndex, maxStringLength, value, cancellationToken);
         }
 
+
+        /// <summary>
+        /// Write a boolean (single bit) to a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write (for example "DB1.DBX0.1").</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="length">The length of the array</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task<string> WriteBoolArrayAsync(string address, bool value, uint length, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.WriteBoolArrayAsync(address, value, length, cancellationToken);
+        }
+
     }
 }

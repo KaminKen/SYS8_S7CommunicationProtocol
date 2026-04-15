@@ -1,5 +1,6 @@
 ﻿using Org.BouncyCastle.Bcpg;
 using SYS8.Core.Driver;
+using System.Linq;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
@@ -35,22 +36,36 @@ namespace S7CommunicationApp
         {
             try
             {
+                int length = 1; // default length
                 if (ps == null)
                 {
                     throw new InvalidOperationException("Monitoring model is not initialized.");
                 }
-                await ps.Subscribe(AddressTextBox.Text, DataTypeTextBox.Text);
+                if(!string.IsNullOrEmpty(LengthTextBox.Text))
+                {
+                    length = int.Parse(LengthTextBox.Text);
+                }
 
-                SubscribeListTextBox.AppendText($"{AddressTextBox.Text} ({DataTypeTextBox.Text}){Environment.NewLine}");
+                if (length == 1)
+                {
+                    await ps.Subscribe(AddressTextBox.Text, DataTypeTextBox.Text);
+                    SubscribeListTextBox.AppendText($"{AddressTextBox.Text} ({DataTypeTextBox.Text}){Environment.NewLine}");
+                }
+                else
+                {
+                    string lastTopic = await ps.SubscribeArray(AddressTextBox.Text, (uint)length,DataTypeTextBox.Text);
+                    SubscribeListTextBox.AppendText($"{AddressTextBox.Text} ({DataTypeTextBox.Text}), Length: {length}, last topic: {lastTopic}{Environment.NewLine}");
+                }
 
+                
                 if (!ps.IsPolling)
                 {
                     ps.StartPolling();
-                } 
+                }
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}");  
+                MessageBox.Show($"Error: {ex.Message}");
             }
         }
 
@@ -78,7 +93,7 @@ namespace S7CommunicationApp
                     ps.StopPolling();
                     SubscribeListTextBox.Clear();
                 }
-                else 
+                else
                 {
                     var remaining = SubscribeListTextBox.Text
                         .Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)

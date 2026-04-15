@@ -49,6 +49,8 @@
             ReadWriteModeButton = new Button();
             ModeLabel = new Label();
             ModeStatusTextBox = new TextBox();
+            LengthLabel = new Label();
+            LengthTextBox = new TextBox();
             SuspendLayout();
             // 
             // IpTextBox
@@ -138,7 +140,7 @@
             AddressTextBox.Location = new Point(700, 237);
             AddressTextBox.Name = "AddressTextBox";
             AddressTextBox.PlaceholderText = "DB1.DBX0.0";
-            AddressTextBox.Size = new Size(400, 31);
+            AddressTextBox.Size = new Size(265, 31);
             AddressTextBox.TabIndex = 9;
             // 
             // AddressLabel
@@ -247,11 +249,30 @@
             ModeStatusTextBox.TabIndex = 20;
             ModeStatusTextBox.Text = "Read/Write";
             // 
+            // LengthLabel
+            // 
+            LengthLabel.AutoSize = true;
+            LengthLabel.Location = new Point(971, 209);
+            LengthLabel.Name = "LengthLabel";
+            LengthLabel.Size = new Size(70, 25);
+            LengthLabel.TabIndex = 22;
+            LengthLabel.Text = "Length:";
+            // 
+            // LengthTextBox
+            // 
+            LengthTextBox.Location = new Point(971, 237);
+            LengthTextBox.Name = "LengthTextBox";
+            LengthTextBox.PlaceholderText = "10 (For Array)";
+            LengthTextBox.Size = new Size(129, 31);
+            LengthTextBox.TabIndex = 21;
+            // 
             // SYS8_PLC_ClientApp
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(1204, 660);
+            ClientSize = new Size(1288, 660);
+            Controls.Add(LengthLabel);
+            Controls.Add(LengthTextBox);
             Controls.Add(ModeStatusTextBox);
             Controls.Add(ModeLabel);
             Controls.Add(ReadWriteModeButton);
@@ -302,5 +323,7 @@
         private Button ReadWriteModeButton;
         private Label ModeLabel;
         private TextBox ModeStatusTextBox;
+        private Label LengthLabel;
+        private TextBox LengthTextBox;
     }
 }

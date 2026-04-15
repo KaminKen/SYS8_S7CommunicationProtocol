@@ -38,13 +38,15 @@
             SubscribeButton = new Button();
             UnsubscribeButton = new Button();
             ReadCheckTextBox = new TextBox();
+            LengthTextBox = new TextBox();
+            LengthLabel = new Label();
             SuspendLayout();
             // 
             // ReadCheckButton
             // 
             ReadCheckButton.Location = new Point(433, 272);
             ReadCheckButton.Name = "ReadCheckButton";
-            ReadCheckButton.Size = new Size(301, 34);
+            ReadCheckButton.Size = new Size(356, 34);
             ReadCheckButton.TabIndex = 0;
             ReadCheckButton.Text = "Read Check";
             ReadCheckButton.UseVisualStyleBackColor = true;
@@ -82,7 +84,7 @@
             AddressTextBox.Location = new Point(433, 95);
             AddressTextBox.Name = "AddressTextBox";
             AddressTextBox.PlaceholderText = "DB1.DBX0.0";
-            AddressTextBox.Size = new Size(301, 31);
+            AddressTextBox.Size = new Size(213, 31);
             AddressTextBox.TabIndex = 4;
             // 
             // DataTypeLabel
@@ -99,14 +101,14 @@
             DataTypeTextBox.Location = new Point(433, 178);
             DataTypeTextBox.Name = "DataTypeTextBox";
             DataTypeTextBox.PlaceholderText = "Bool";
-            DataTypeTextBox.Size = new Size(301, 31);
+            DataTypeTextBox.Size = new Size(356, 31);
             DataTypeTextBox.TabIndex = 6;
             // 
             // SubscribeButton
             // 
             SubscribeButton.Location = new Point(433, 330);
             SubscribeButton.Name = "SubscribeButton";
-            SubscribeButton.Size = new Size(301, 34);
+            SubscribeButton.Size = new Size(356, 34);
             SubscribeButton.TabIndex = 7;
             SubscribeButton.Text = "Subscribe";
             SubscribeButton.UseVisualStyleBackColor = true;
@@ -116,7 +118,7 @@
             // 
             UnsubscribeButton.Location = new Point(433, 370);
             UnsubscribeButton.Name = "UnsubscribeButton";
-            UnsubscribeButton.Size = new Size(301, 34);
+            UnsubscribeButton.Size = new Size(356, 34);
             UnsubscribeButton.TabIndex = 8;
             UnsubscribeButton.Text = "Unsubscribe";
             UnsubscribeButton.UseVisualStyleBackColor = true;
@@ -127,14 +129,33 @@
             ReadCheckTextBox.Location = new Point(433, 235);
             ReadCheckTextBox.Name = "ReadCheckTextBox";
             ReadCheckTextBox.ReadOnly = true;
-            ReadCheckTextBox.Size = new Size(301, 31);
+            ReadCheckTextBox.Size = new Size(356, 31);
             ReadCheckTextBox.TabIndex = 9;
+            // 
+            // LengthTextBox
+            // 
+            LengthTextBox.Location = new Point(652, 95);
+            LengthTextBox.Name = "LengthTextBox";
+            LengthTextBox.PlaceholderText = "10 (For Array)";
+            LengthTextBox.Size = new Size(137, 31);
+            LengthTextBox.TabIndex = 11;
+            // 
+            // LengthLabel
+            // 
+            LengthLabel.AutoSize = true;
+            LengthLabel.Location = new Point(652, 67);
+            LengthLabel.Name = "LengthLabel";
+            LengthLabel.Size = new Size(66, 25);
+            LengthLabel.TabIndex = 10;
+            LengthLabel.Text = "Length";
             // 
             // PublishAndSubscribe
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(848, 450);
+            Controls.Add(LengthTextBox);
+            Controls.Add(LengthLabel);
             Controls.Add(ReadCheckTextBox);
             Controls.Add(UnsubscribeButton);
             Controls.Add(SubscribeButton);
@@ -163,5 +184,7 @@
         private Button SubscribeButton;
         private Button UnsubscribeButton;
         private TextBox ReadCheckTextBox;
+        private TextBox LengthTextBox;
+        private Label LengthLabel;
     }
 }
