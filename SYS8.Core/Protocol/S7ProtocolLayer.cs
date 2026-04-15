@@ -1,8 +1,10 @@
-﻿using SYS8.Core.StringManipulation;
+﻿using Microsoft.VisualBasic;
+using SYS8.Core.StringManipulation;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Security;
 using System.Reflection;
@@ -13,6 +15,12 @@ using System.Threading.Tasks;
 
 namespace SYS8.Core.Protocol
 {
+    /// <summary>
+    /// Implements the Siemens S7 protocol operations (read/write/setup) on top of a TPKT/COTP transport.
+    /// This layer exposes methods that accept either a textual address (for example "DB1.DBX0.1") or
+    /// raw numeric DB parameters (<c>dbNumber</c>, <c>byteOffset</c>, <c>bitIndex</c>).
+    /// High level callers can use the string-based API which delegates to the numeric overloads after parsing.
+    /// </summary>
     public class S7ProtocolLayer
     {
         private readonly TpktCotpLayer _tpktCotp;
@@ -156,21 +164,32 @@ namespace SYS8.Core.Protocol
             return parser.ParseStringAddress(address);
         }
 
-
-        //TODO: optimize and refine. Possibly create helper function for checking header and params sent from PLC as they are mostly the same
-
         /// <summary>
-        /// Read a boolean (single bit) from a DB in the PLC.
+        /// Read a single boolean (bit) from a DB specified by a textual address.
+        /// The address is parsed (for example "DB1.DBX0.1") and the request is delegated
+        /// to the numeric overload that accepts <c>dbNumber</c>, <c>byteOffset</c> and <c>bitIndex</c>.
         /// </summary>
-        /// <param name="dbNumber">DB number to read from (DBx).</param>
-        /// <param name="byteOffset">Byte offset inside the DB (DBXn byte index).</param>
-        /// <param name="bitIndex">Bit index inside the byte (0..7).</param>
+        /// <param name="address">Textual DB address (for example "DB1.DBX0.1").</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>True when the addressed bit is set; otherwise false.</returns>
-        /// <exception cref="Exception">Thrown when the PLC response is invalid or indicates an error.</exception>
         public async Task<bool> ReadBoolAsync(string address, CancellationToken cancellationToken = default)
         {
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadBoolAsync(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
 
+
+        /// <summary>
+        /// Read a boolean (single bit) from a DB in the PLC using numeric DB parameters.
+        /// </summary>
+        /// <param name="dbNumber">DB number to read from (DBx).</param>
+        /// <param name="byteOffset">Byte offset inside the DB (byte index).</param>
+        /// <param name="bitIndex">Bit index inside the byte (0..7).</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>True when the addressed bit is set; otherwise false.</returns>
+        /// <exception cref="Exception">Thrown when the PLC response is invalid or indicates an error.</exception>
+        public async Task<bool> ReadBoolAsync(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
+        { 
             Debug.WriteLine($"Reading boolean from DB{dbNumber}.DBX{byteOffset}.{bitIndex}...");
 
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Bit, 1); // transport size bit, data length 1 byte
@@ -198,24 +217,38 @@ namespace SYS8.Core.Protocol
 
         }
 
+        
+        /// <summary>
+        /// Read a 16-bit signed integer (INT) from a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address (for example "DB1.DBW0" or "DB1.DBD0").</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 16-bit signed value read from the PLC.</returns>
+        public async Task<Int16> ReadInt16Async(string address, CancellationToken cancellationToken = default)
+        {
+            var(dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+
 
         //TODO: optimize and refine. Possibly create helper function for all Read for checking header and params sent from PLC as they are mostly the same
         /// <summary>
-        /// Read a 16-bit signed integer (INT) from a DB in the PLC.
+        /// Read a 16-bit signed integer (INT) from a DB using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">DB number to read from.</param>
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types; kept for API symmetry.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 16-bit signed value read from the PLC.</returns>
         /// <exception cref="Exception">Thrown when the PLC response is invalid or indicates an error.</exception>
-        public async Task<Int16> ReadInt16Async(string address, CancellationToken cancellationToken = default)
+        public async Task<Int16> ReadInt16Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
         {
             // Similar to ReadBoolAsync, but with parameters set for reading a 16-bit integer
             // transport size = 0x05 for INT, 4 data header parameters and data length = 2 bytes
             // The data parsing would also need to be adjusted to read 2 bytes of data and convert it to an Int16 value.
             // For INT transport, request 2 bytes (the helper will encode the parameter length in bits)
-
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
 
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Int, 2);
 
@@ -235,17 +268,29 @@ namespace SYS8.Core.Protocol
 
 
         /// <summary>
+        /// Read a 32-bit signed integer (DINT) from a DB specified by a textual address.
+        /// Delegates to the numeric overload after parsing the address string.
+        /// </summary>
+        /// <param name="address">Textual DB address (for example "DB1.DBD0").</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 32-bit signed value read from the PLC.</returns>
+        public async Task<Int32> ReadInt32Async(string address, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+
+        /// <summary>
         /// Read a 32-bit signed integer (DINT) from a DB in the PLC.
         /// </summary>
         /// <param name="dbNumber">DB number to read from.</param>
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <returns>The 32-bit signed value read from the PLC.</returns>
-        public async Task<Int32> ReadInt32Async(string address, CancellationToken cancellationToken = default)
+        public async Task<Int32> ReadInt32Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
         {
             // DINT: request 4 bytes (helper will set parameter length to 32 bits)
-
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DInt, 4);
 
             Debug.WriteLine($"ReadInt32: DB={dbNumber} Offset={byteOffset} Bit={bitIndex} -> PDU: {BitConverter.ToString(pdu)}");
@@ -268,6 +313,19 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Read a 64-bit signed integer (LINT) from a DB specified by a textual address.
+        /// Delegates to the numeric overload after parsing the address string.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 64-bit signed value read from the PLC.</returns>
+        public async Task<long> ReadInt64Async(string address, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadInt64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        /// <summary>
         /// Read a 64-bit signed integer from a DB in the PLC.
         /// </summary>
         /// <remarks>
@@ -279,12 +337,11 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <returns>The 64-bit signed value read from the PLC.</returns>
-        public async Task<long> ReadInt64Async(string address, CancellationToken cancellationToken = default)
+        public async Task<long> ReadInt64Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
         {
             // Request raw 8 bytes from the PLC and combine them into a signed 64-bit value.
             // Use ItemTransport.Byte so the PLC returns the data as an octet string / raw bytes.
             // 8 bytes requested for 64-bit values; for octet/real transports the helper expects dataUnitLength in bytes
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
 
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
@@ -310,6 +367,20 @@ namespace SYS8.Core.Protocol
             return value;
         }
 
+        /// <summary>
+        /// Read a 16-bit unsigned integer (WORD/UINT) from a DB specified by a textual address.
+        /// Delegates to the numeric overload after parsing the address string.
+        /// </summary>
+        /// <param name="address">Textual DB address (for example "DB1.DBW0").</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 16-bit unsigned value read from the PLC.</returns>
+        public async Task<UInt16> ReadUInt16Async(string address, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadUInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+
 
         /// <summary>
         /// Read a 16-bit unsigned integer (WORD/UINT) from a DB in the PLC.
@@ -318,10 +389,9 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <returns>The 16-bit unsigned value read from the PLC.</returns>
-        public async Task<UInt16> ReadUInt16Async(string address, CancellationToken cancellationToken = default)
+        public async Task<UInt16> ReadUInt16Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
         {
             // WORD/UINT: request 2 bytes (helper will set parameter length to 16 bits)
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Word, 2);
 
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
@@ -338,6 +408,12 @@ namespace SYS8.Core.Protocol
 
         }
 
+        public async Task<UInt32> ReadUInt32Async(string address, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadUInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
         /// <summary>
         /// Read a 32-bit unsigned integer (DWORD/UDINT) from a DB in the PLC.
         /// </summary>
@@ -345,10 +421,9 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <returns>The 32-bit unsigned value read from the PLC.</returns>
-        public async Task<UInt32> ReadUInt32Async(string address, CancellationToken cancellationToken = default)
+        public async Task<UInt32> ReadUInt32Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
         {
             // DWORD/UDINT: request 4 bytes (helper will set parameter length to 32 bits)
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DWord, 4); 
 
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
@@ -369,6 +444,19 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Read a 64-bit unsigned integer (ULINT) from a DB specified by a textual address.
+        /// Delegates to the numeric overload after parsing the address string.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 64-bit unsigned value read from the PLC.</returns>
+        public async Task<ulong> ReadUInt64Async(string address, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadUInt64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        /// <summary>
         /// Read a 64-bit unsigned integer from a DB in the PLC.
         /// </summary>
         /// <remarks>
@@ -379,11 +467,10 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <returns>The 64-bit unsigned value read from the PLC.</returns>
-        public async Task<ulong> ReadUInt64Async(string address, CancellationToken cancellationToken = default)
+        public async Task<ulong> ReadUInt64Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
         {
             // Request 8 raw octets for consistent cross-CPU behavior
-            // 8 bytes requested for 64-bit unsigned
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            // 8 bytes requested for 64-bit 
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
 
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
@@ -411,6 +498,19 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Read a 32-bit floating point value (REAL) from a DB specified by a textual address.
+        /// Delegates to the numeric overload after parsing the address string.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 32-bit floating point value read from the PLC.</returns>
+        public async Task<float> ReadFloat32Async(string address, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadFloat32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        /// <summary>
         /// Read a 32-bit floating point value (REAL) from a DB in the PLC.
         /// </summary>
         /// <remarks>
@@ -422,10 +522,9 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <returns>The 32-bit floating point value read from the PLC.</returns>
-        public async Task<float> ReadFloat32Async(string address, CancellationToken cancellationToken = default)
+        public async Task<float> ReadFloat32Async(ushort dbNumber,int byteOffset,int bitIndex, CancellationToken cancellationToken = default)
         {
             // Request 4 raw bytes (REAL) as octet string to ensure byte-level control
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Real, 4);
 
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
@@ -451,6 +550,19 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Read a 64-bit floating point value (LREAL/DOUBLE) from a DB specified by a textual address.
+        /// Delegates to the numeric overload after parsing the address string.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 64-bit floating point value read from the PLC.</returns>
+        public async Task<double> ReadFloat64Async(string address, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadFloat64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        /// <summary>
         /// Read a 64-bit floating point value (LREAL/DOUBLE) from a DB in the PLC.
         /// </summary>
         /// <remarks>
@@ -462,10 +574,9 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <returns>The 64-bit floating point value read from the PLC.</returns>
-        public async Task<double> ReadFloat64Async(string address, CancellationToken cancellationToken = default)
+        public async Task<double> ReadFloat64Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
         {
-            // Request 8 raw octets to decode IEEE-754 double consistently
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            // Request 8 raw octets to decode IEEE-754 double 
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
 
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
@@ -489,6 +600,20 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Read a Siemens STRING from a DB specified by a textual address.
+        /// Delegates to the numeric overload after parsing the address string.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="maxStringLength">Maximum expected string length (characters).</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The decoded string read from the PLC.</returns>
+        public async Task<string> ReadStringAsync(string address, int maxStringLength, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadStringAsync(dbNumber, byteOffset, bitIndex, maxStringLength, cancellationToken);
+        }
+
+        /// <summary>
         /// Read a Siemens STRING from a DB.
         /// </summary>
         /// <remarks>
@@ -501,10 +626,9 @@ namespace SYS8.Core.Protocol
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="maxStringLength">Maximum expected string length (characters).</param>
         /// <returns>The decoded string (empty if declared max is 0).</returns>
-        public async Task<string> ReadStringAsync(string address, int maxStringLength, CancellationToken cancellationToken = default)
+        public async Task<string> ReadStringAsync(ushort dbNumber,int byteOffset,int bitIndex,int maxStringLength, CancellationToken cancellationToken = default)
         {
             // Request as octet string: expected returned length is (maxStringLength + 2) bytes where first byte = declared max and second = current length
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, (ushort)(maxStringLength + 2));
 
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
@@ -542,6 +666,19 @@ namespace SYS8.Core.Protocol
             return value;
         }
 
+        /// <summary>
+        /// Write a boolean (single bit) to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteBoolAsync(string address, bool value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteBoolAsync(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
 
         /// <summary>
         /// Write a boolean (single bit) to a DB in the PLC.
@@ -557,10 +694,9 @@ namespace SYS8.Core.Protocol
         /// and an exception is thrown if the PLC reports an error.
         /// </remarks>
         /// <exception cref="Exception">Thrown when the PLC response indicates a failure.</exception>
-        public async Task WriteBoolAsync(string address, bool value, CancellationToken cancellationToken = default)
+        public async Task WriteBoolAsync(ushort dbNumber,int byteOffset,int bitIndex,bool value, CancellationToken cancellationToken = default)
         {
             // Build header+parameters for a WriteVar request (item transport = Bit, length = 1)
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Bit, 1);
 
             // Use helper to build the write-data block for a boolean value
@@ -583,18 +719,28 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Write a 16-bit signed integer (INT) to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteInt16Async(string address, short value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteInt16Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
+        /// <summary>
         /// Write a 16-bit signed integer (INT) to a DB in the PLC.
         /// </summary>
         /// <param name="dbNumber">DB number to write to.</param>
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="value">Value to write.</param>
-
-
-        public async Task WriteInt16Async(string address, short value, CancellationToken cancellationToken = default)
+        public async Task WriteInt16Async(ushort dbNumber,int byteOffset,int bitIndex,short value, CancellationToken cancellationToken = default)
         {
             // INT: request 2 bytes (helper will encode parameter length as 16 bits)
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Int, 2);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromInt16(value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
@@ -610,6 +756,19 @@ namespace SYS8.Core.Protocol
 
             S7ProtocolHelpers.ValidateWriteResponse(respPayload);
         }
+        /// <summary>
+        /// Write a 32-bit signed integer (DINT) to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteInt32Async(string address, int value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteInt32Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
 
         /// <summary>
         /// Write a 32-bit signed integer (DINT) to a DB in the PLC.
@@ -618,10 +777,9 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="value">Value to write.</param>
-        public async Task WriteInt32Async(string address, int value, CancellationToken cancellationToken = default)
+        public async Task WriteInt32Async(ushort dbNumber,int byteOffset,int bitIndex,int value, CancellationToken cancellationToken = default)
         {
             // DINT: request 4 bytes (helper will encode parameter length as 32 bits)
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DInt, 4);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromInt32(value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
@@ -630,6 +788,19 @@ namespace SYS8.Core.Protocol
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
             byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
             S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
+
+        /// <summary>
+        /// Write a 64-bit signed integer to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteInt64Async(string address, long value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteInt64Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
         }
 
         /// <summary>
@@ -642,10 +813,9 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="value">Value to write.</param>
-        public async Task WriteInt64Async(string address, long value, CancellationToken cancellationToken = default)
+        public async Task WriteInt64Async(ushort dbNumber,int byteOffset,int bitIndex,long value, CancellationToken cancellationToken = default)
         {
             // Use octet string payload to write 8 bytes
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromInt64(value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
@@ -657,16 +827,28 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Write a 16-bit unsigned integer (WORD/UINT) to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteUInt16Async(string address, ushort value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteUInt16Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
+        /// <summary>
         /// Write a 16-bit unsigned integer (WORD/UINT) to a DB in the PLC.
         /// </summary>
         /// <param name="dbNumber">DB number to write to.</param>
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="value">Value to write.</param>
-        public async Task WriteUInt16Async(string address, ushort value, CancellationToken cancellationToken = default)
+        public async Task WriteUInt16Async(ushort dbNumber,int byteOffset,int bitIndex,ushort value, CancellationToken cancellationToken = default)
         {
             // WORD/UINT: request 2 bytes (helper will encode parameter length as 16 bits)
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Word, 2);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromUInt16(value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
@@ -678,16 +860,28 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Write a 32-bit unsigned integer (DWORD/UDINT) to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteUInt32Async(string address, uint value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteUInt32Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }   
+
+        /// <summary>
         /// Write a 32-bit unsigned integer (DWORD/UDINT) to a DB in the PLC.
         /// </summary>
         /// <param name="dbNumber">DB number to write to.</param>
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="value">Value to write.</param>
-        public async Task WriteUInt32Async(string address, uint value, CancellationToken cancellationToken = default)
+        public async Task WriteUInt32Async(ushort dbNumber,int byteOffset,int bitIndex,uint value, CancellationToken cancellationToken = default)
         {
             // DWORD/UDINT: request 4 bytes (helper will encode parameter length as 32 bits)
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DWord, 4);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromUInt32(value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
@@ -699,6 +893,20 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Write a 64-bit unsigned integer (ULINT) to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteUInt64Async(string address, ulong value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteUInt64Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
+
+        /// <summary>
         /// Write a 64-bit unsigned integer to a DB in the PLC.
         /// </summary>
         /// <remarks>
@@ -708,9 +916,8 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="value">Value to write.</param>
-        public async Task WriteUInt64Async(string address, ulong value, CancellationToken cancellationToken = default)
+        public async Task WriteUInt64Async(ushort dbNumber,int byteOffset,int bitIndex,ulong value, CancellationToken cancellationToken = default)
         {
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, 8);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromUInt64(value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
@@ -719,6 +926,19 @@ namespace SYS8.Core.Protocol
             await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
             byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
             S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+        }
+
+        /// <summary>
+        /// Write a 32-bit floating point value (REAL) to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteFloat32Async(string address, float value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteFloat32Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
         }
 
         /// <summary>
@@ -731,9 +951,8 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="value">Value to write.</param>
-        public async Task WriteFloat32Async(string address, float value, CancellationToken cancellationToken = default)
+        public async Task WriteFloat32Async(ushort dbNumber,int byteOffset,int bitIndex,float value, CancellationToken cancellationToken = default)
         {
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             // S7ANY transport REAL (0x08) must match the write data block (DataTransport.Real / BREAL).
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Real, 4);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromFloat(value);
@@ -746,6 +965,19 @@ namespace SYS8.Core.Protocol
         }
 
         /// <summary>
+        /// Write a 64-bit floating point value (LREAL/DOUBLE) to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteFloat64Async(string address, double value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteFloat64Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
+        /// <summary>
         /// Write a 64-bit floating point value (LREAL/DOUBLE) to a DB in the PLC.
         /// </summary>
         /// <remarks>
@@ -755,9 +987,8 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="value">Value to write.</param>
-        public async Task WriteFloat64Async(string address, double value, CancellationToken cancellationToken = default)
+        public async Task WriteFloat64Async(ushort dbNumber,int byteOffset,int bitIndex,double value, CancellationToken cancellationToken = default)
         {
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.LReal, 8);
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromDouble(value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
@@ -767,6 +998,20 @@ namespace SYS8.Core.Protocol
             byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
             S7ProtocolHelpers.ValidateWriteResponse(respPayload);
         }
+        /// <summary>
+        /// Write a Siemens STRING to a DB specified by a textual address.
+        /// The address is parsed and the request is delegated to the numeric overload.
+        /// </summary>
+        /// <param name="address">Textual DB address.</param>
+        /// <param name="maxStringLength">Declared maximum length for the STRING (characters).</param>
+        /// <param name="value">String value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteStringAsync(string address, int maxStringLength, string value, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            await WriteStringAsync(dbNumber, byteOffset, bitIndex, maxStringLength, value, cancellationToken);
+        }
+
 
         /// <summary>
         /// Write a Siemens STRING to a DB.
@@ -779,9 +1024,8 @@ namespace SYS8.Core.Protocol
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <param name="maxStringLength">Declared maximum length for the STRING (characters).</param>
         /// <param name="value">String value to write.</param>
-        public async Task WriteStringAsync(string address, int maxStringLength, string value, CancellationToken cancellationToken = default)
+        public async Task WriteStringAsync(ushort dbNumber,int byteOffset,int bitIndex,int maxStringLength, string value, CancellationToken cancellationToken = default)
         {
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, (ushort)(maxStringLength + 2));
             byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromString(maxStringLength, value);
             byte[] pdu = new byte[headerAndParams.Length + data.Length];
