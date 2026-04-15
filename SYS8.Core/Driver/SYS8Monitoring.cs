@@ -55,6 +55,20 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
+        /// Subscribes to an array topic with the specified length and data type. The topic should
+        /// be a valid PLC address, and the length specifies the number of elements in the array.
+        /// </summary>
+        /// <param name="topic">The topic or address to subscribe to.</param>
+        /// <param name="length">The number of elements in the array.</param>
+        /// <param name="datatype">The data type that should be used when reading the array elements.</param>
+        /// <returns>A task that completes when the subscription has been registered.</returns>
+        public Task SubscribeArray(string topic, uint length, string datatype)
+        {
+            return _model.SubscribeArray(topic, length, datatype);
+        }
+
+
+        /// <summary>
         /// Unsubscribes from a previously subscribed topic.
         /// </summary>
         /// <param name="topic">The topic to unsubscribe.</param>

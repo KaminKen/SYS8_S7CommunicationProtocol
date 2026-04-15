@@ -1,7 +1,9 @@
 ﻿using SYS8.Core.Driver;
+using SYS8.Core.StringManipulation;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Net;
 using System.Text;
 using System.Threading;
 
@@ -22,6 +24,17 @@ namespace SYS8.Core.PubSub
         public PublishAndSubscribeModel(SYS8Driver driver)
         {
             _driver = driver;
+        }
+
+        /// <summary>
+        /// Parse a Siemens DB address string (for example "DB1.DBX0.1") into numeric components.
+        /// </summary>
+        /// <param name="address">Address string to parse.</param>
+        /// <returns>Tuple of (dbNumber, byteOffset, bitIndex).</returns>
+        private (ushort dbNumber, int byteOffset, int bitIndex) ParseStringAddress(string address)
+        {
+            var parser = new StringAddressToAbsoluteAddress();
+            return parser.ParseStringAddress(address);
         }
 
         public void StartPolling(int interval = 1000)
@@ -61,6 +74,7 @@ namespace SYS8.Core.PubSub
         }
 
 
+
         public async Task Subscribe(string? topic, string? datatype) // , Action<string, object> callback
         {
             // Implementation for subscribing to a topic
@@ -95,10 +109,52 @@ namespace SYS8.Core.PubSub
                 _ => throw new ArgumentException($"Unsupported data type: {datatype}")
             };
             _previousValues[topic] = initialValue;
-            
-
-            
         }
+
+        public async Task SubscribeArray(string? topic, uint length, string? datatype) // , Action<string, object> callback
+        {
+            if (string.IsNullOrEmpty(topic) || string.IsNullOrEmpty(datatype))
+            {
+                throw new ArgumentException("Topic and datatype cannot be null or empty.");
+            }
+
+
+            if (!_driver.IsConnected)
+            {
+                throw new InvalidOperationException("Driver is not connected.");
+            }
+
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(topic);
+
+            int initialOffset = byteOffset * 8 + bitIndex;
+            for (int i = initialOffset; i < initialOffset + length; i++)
+            { 
+                int localByteOffset = i / 8;
+                int localBitIndex = i % 8;
+                string tempTopic = "DB" + dbNumber + ".DBX" + localByteOffset + "." + localBitIndex;
+
+                if (_previousValues.ContainsKey(tempTopic))
+                {
+                    throw new InvalidOperationException($"Topic '{tempTopic}' is already subscribed.");
+                }
+
+                _datatype[tempTopic] = datatype.ToLower();
+                object initialValue = datatype.ToLower() switch
+                {
+                    "bool" => await _driver.ReadBoolAsync(dbNumber, localByteOffset, localBitIndex),
+                    "int16" => await _driver.ReadInt16Async(dbNumber, localByteOffset, localBitIndex),
+                    "uint16" => await _driver.ReadUInt16Async(dbNumber, localByteOffset, localBitIndex),
+                    "int32" => await _driver.ReadInt32Async(dbNumber, localByteOffset, localBitIndex),
+                    "uint32" => await _driver.ReadUInt32Async(dbNumber, localByteOffset, localBitIndex),
+                    "float32" => await _driver.ReadFloat32Async(dbNumber, localByteOffset, localBitIndex),
+                    "float64" => await _driver.ReadFloat64Async(dbNumber, localByteOffset, localBitIndex),
+                    "string" => string.Empty,
+                    _ => throw new ArgumentException($"Unsupported data type: {datatype}")
+                };
+                _previousValues[tempTopic] = initialValue;
+            }
+        }
+
 
         public void Unsubscribe(string topic)
         {
