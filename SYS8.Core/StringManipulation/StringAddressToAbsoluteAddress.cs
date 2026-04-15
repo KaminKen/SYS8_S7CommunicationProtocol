@@ -41,5 +41,21 @@ namespace SYS8.Core.StringManipulation
 
             return (dbNumber, byteOffset, bitIndex);
         }
+
+
+        public string ConvertToAbsoluteAddress(string address)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return ConvertToAbsoluteAddress(dbNumber, byteOffset, bitIndex);
+        }
+
+
+
+        public string ConvertToAbsoluteAddress(ushort dbNumber, int byteOffset, int bitIndex)
+        {
+            int absoluteByteOffset = (dbNumber - 1) * 256 + byteOffset;
+            // Return the absolute address in the format "DB{dbNumber}.DBX{absoluteByteOffset}.{bitIndex}"
+            return $"DB{dbNumber}.DBX{absoluteByteOffset}.{bitIndex}";
+        }
     }
 }
