@@ -133,113 +133,6 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
-        /// Read a 16-bit signed integer (INT) from a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to read (for example "DB1.DBW0").</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The 16-bit signed value read from the PLC.</returns>
-        public async Task<Int16> ReadInt16Async(string address, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.ReadInt16Async(address, cancellationToken);
-        }
-
-        /// <summary>
-        /// Read a 32-bit signed integer (DINT) from a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to read (for example "DB1.DBD0").</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The 32-bit signed value read from the PLC.</returns>
-        public async Task<Int32> ReadInt32Async(string address, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.ReadInt32Async(address, cancellationToken);
-        }
-
-        /// <summary>
-        /// Read a 64-bit signed integer (LINT) from a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to read.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The 64-bit signed value read from the PLC.</returns>
-        public async Task<Int64> ReadInt64Async(string address, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.ReadInt64Async(address, cancellationToken);
-        }
-        /// <summary>
-        /// Read a 16-bit unsigned integer (WORD/UINT) from a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to read (for example "DB1.DBW0").</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The 16-bit unsigned value read from the PLC.</returns>
-        public async Task<UInt16> ReadUInt16Async(string address, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.ReadUInt16Async(address, cancellationToken);
-        }
-        /// <summary>
-        /// Read a 32-bit unsigned integer (DWORD/UDINT) from a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to read.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The 32-bit unsigned value read from the PLC.</returns>
-        public async Task<UInt32> ReadUInt32Async(string address, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.ReadUInt32Async(address, cancellationToken);
-        }
-
-        /// <summary>
-        /// Read a 64-bit unsigned integer (ULINT) from a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to read.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The 64-bit unsigned value read from the PLC.</returns>
-        public async Task<UInt64> ReadUInt64Async(string address, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.ReadUInt64Async(address, cancellationToken);
-        }
-
-        /// <summary>
-        /// Read a 32-bit floating point value (REAL) from a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to read.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The 32-bit floating point value read from the PLC.</returns>
-        public async Task<float> ReadFloat32Async(string address, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.ReadFloat32Async(address, cancellationToken);
-        }
-
-        /// <summary>
-        /// Read a 64-bit floating point value (LREAL/DOUBLE) from a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to read.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The 64-bit floating point value read from the PLC.</returns>
-        public async Task<double> ReadFloat64Async(string address, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.ReadFloat64Async(address, cancellationToken);
-        }
-
-        /// <summary>
-        /// Read a Siemens STRING from a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to read.</param>
-        /// <param name="maxStringLength">Maximum expected string length (characters).</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The decoded string read from the PLC.</returns>
-        public async Task<string> ReadStringAsync(string address, int maxStringLength, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.ReadStringAsync(address, maxStringLength, cancellationToken);
-        }
-
-        /// <summary>
         /// Read a single boolean (bit) from a data block in the PLC using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">DB number to read from.</param>
@@ -251,6 +144,18 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             return await _s7Protocol.ReadBoolAsync(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        /// <summary>
+        /// Read a 16-bit signed integer (INT) from a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to read (for example "DB1.DBW0").</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 16-bit signed value read from the PLC.</returns>
+        public async Task<Int16> ReadInt16Async(string address, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadInt16Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -270,6 +175,18 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
+        /// Read a 32-bit signed integer (DINT) from a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to read (for example "DB1.DBD0").</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 32-bit signed value read from the PLC.</returns>
+        public async Task<Int32> ReadInt32Async(string address, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadInt32Async(address, cancellationToken);
+        }
+
+        /// <summary>
         /// Read a 32-bit signed integer (DINT) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
@@ -282,6 +199,18 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             return await _s7Protocol.ReadInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        /// <summary>
+        /// Read a 64-bit signed integer (LINT) from a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 64-bit signed value read from the PLC.</returns>
+        public async Task<Int64> ReadInt64Async(string address, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadInt64Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -299,6 +228,19 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadInt64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+
+        /// <summary>
+        /// Read a 16-bit unsigned integer (WORD/UINT) from a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to read (for example "DB1.DBW0").</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 16-bit unsigned value read from the PLC.</returns>
+        public async Task<UInt16> ReadUInt16Async(string address, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadUInt16Async(address, cancellationToken);
+        }
+
         /// <summary>
         /// Read a 16-bit unsigned integer (WORD/UINT) using numeric DB parameters.
         /// </summary>
@@ -311,6 +253,19 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             return await _s7Protocol.ReadUInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+
+        /// <summary>
+        /// Read a 32-bit unsigned integer (DWORD/UDINT) from a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 32-bit unsigned value read from the PLC.</returns>
+        public async Task<UInt32> ReadUInt32Async(string address, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadUInt32Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -328,6 +283,18 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
+        /// Read a 64-bit unsigned integer (ULINT) from a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 64-bit unsigned value read from the PLC.</returns>
+        public async Task<UInt64> ReadUInt64Async(string address, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadUInt64Async(address, cancellationToken);
+        }
+
+        /// <summary>
         /// Read a 64-bit unsigned integer (ULINT) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
@@ -339,6 +306,18 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             return await _s7Protocol.ReadUInt64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        /// <summary>
+        /// Read a 32-bit floating point value (REAL) from a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 32-bit floating point value read from the PLC.</returns>
+        public async Task<float> ReadFloat32Async(string address, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadFloat32Async(address, cancellationToken);
         }
 
         /// <summary>
@@ -356,6 +335,18 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
+        /// Read a 64-bit floating point value (LREAL/DOUBLE) from a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The 64-bit floating point value read from the PLC.</returns>
+        public async Task<double> ReadFloat64Async(string address, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadFloat64Async(address, cancellationToken);
+        }
+
+        /// <summary>
         /// Read a 64-bit floating point value (LREAL/DOUBLE) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
@@ -367,6 +358,19 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             return await _s7Protocol.ReadFloat64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        /// <summary>
+        /// Read a Siemens STRING from a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to read.</param>
+        /// <param name="maxStringLength">Maximum expected string length (characters).</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The decoded string read from the PLC.</returns>
+        public async Task<string> ReadStringAsync(string address, int maxStringLength, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadStringAsync(address, maxStringLength, cancellationToken);
         }
 
         /// <summary>
@@ -399,116 +403,6 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
-        /// Write a 16-bit signed integer (INT) to the PLC DB using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write (for example "DB1.DBW0").</param>
-        /// <param name="value">Value to write.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteInt16Async(string address, short value, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            await _s7Protocol.WriteInt16Async(address, value, cancellationToken);
-        }
-
-        /// <summary>
-        /// Write a 32-bit signed integer (DINT) to the PLC DB using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write (for example "DB1.DBD0").</param>
-        /// <param name="value">Value to write.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteInt32Async(string address, int value, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            await _s7Protocol.WriteInt32Async(address, value, cancellationToken);
-        }
-
-
-        /// <summary>
-        /// Write a 64-bit signed integer to the PLC DB using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write.</param>
-        /// <param name="value">Value to write.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteInt64Async(string address, long value, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            await _s7Protocol.WriteInt64Async(address, value, cancellationToken);
-        }
-
-        /// <summary>
-        /// Write a 16-bit unsigned integer (WORD/UINT) to the PLC DB using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write.</param>
-        /// <param name="value">Value to write.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteUInt16Async(string address, ushort value, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            await _s7Protocol.WriteUInt16Async(address, value, cancellationToken);
-        }
-
-        /// <summary>
-        /// Write a 32-bit unsigned integer (DWORD/UDINT) to the PLC DB using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write.</param>
-        /// <param name="value">Value to write.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteUInt32Async(string address, uint value, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            await _s7Protocol.WriteUInt32Async(address, value, cancellationToken);
-        }
-
-        /// <summary>
-        /// Write a 64-bit unsigned integer (ULINT) to the PLC DB using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write.</param>
-        /// <param name="value">Value to write.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteUInt64Async(string address, ulong value, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            await _s7Protocol.WriteUInt64Async(address, value, cancellationToken);
-        }
-
-        /// <summary>
-        /// Write a 32-bit floating point value (REAL) to the PLC DB using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write.</param>
-        /// <param name="value">Value to write.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteFloat32Async(string address, float value, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            await _s7Protocol.WriteFloat32Async(address, value, cancellationToken);
-        }
-
-        /// <summary>
-        /// Write a 64-bit floating point value (LREAL/DOUBLE) to the PLC DB using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write.</param>
-        /// <param name="value">Value to write.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteFloat64Async(string address, double value, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            await _s7Protocol.WriteFloat64Async(address, value, cancellationToken);
-        }
-
-        /// <summary>
-        /// Write a Siemens STRING into a DB using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write.</param>
-        /// <param name="maxStringLength">Declared maximum length for the STRING (characters).</param>
-        /// <param name="value">String value to write.</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task WriteStringAsync(string address, int maxStringLength, string value, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            await _s7Protocol.WriteStringAsync(address, maxStringLength, value, cancellationToken);
-        }
-
-        /// <summary>
         /// Write a boolean (single bit) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The DB number to write to.</param>
@@ -521,6 +415,31 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             await _s7Protocol.WriteBoolAsync(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
+        /// <summary>
+        /// Write a boolean (single bit) to a DB in the PLC using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write (for example "DB1.DBX0.1").</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="length">The length of the array</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task<string> WriteBoolArrayAsync(string address, bool value, uint length, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.WriteBoolArrayAsync(address, value, length, cancellationToken);
+        }
+
+        /// <summary>
+        /// Write a 16-bit signed integer (INT) to the PLC DB using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write (for example "DB1.DBW0").</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteInt16Async(string address, short value, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            await _s7Protocol.WriteInt16Async(address, value, cancellationToken);
         }
 
         /// <summary>
@@ -538,6 +457,18 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
+        /// Write a 32-bit signed integer (DINT) to the PLC DB using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write (for example "DB1.DBD0").</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteInt32Async(string address, int value, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            await _s7Protocol.WriteInt32Async(address, value, cancellationToken);
+        }
+
+        /// <summary>
         /// Write a 32-bit signed integer (DINT) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The DB number to write to.</param>
@@ -549,6 +480,19 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             await _s7Protocol.WriteInt32Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
+
+        /// <summary>
+        /// Write a 64-bit signed integer to the PLC DB using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteInt64Async(string address, long value, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            await _s7Protocol.WriteInt64Async(address, value, cancellationToken);
         }
 
         /// <summary>
@@ -566,6 +510,18 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
+        /// Write a 16-bit unsigned integer (WORD/UINT) to the PLC DB using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteUInt16Async(string address, ushort value, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            await _s7Protocol.WriteUInt16Async(address, value, cancellationToken);
+        }
+
+        /// <summary>
         /// Write a 16-bit unsigned integer (WORD/UINT) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The DB number to write to.</param>
@@ -577,6 +533,18 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             await _s7Protocol.WriteUInt16Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
+        /// <summary>
+        /// Write a 32-bit unsigned integer (DWORD/UDINT) to the PLC DB using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteUInt32Async(string address, uint value, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            await _s7Protocol.WriteUInt32Async(address, value, cancellationToken);
         }
 
         /// <summary>
@@ -594,6 +562,18 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
+        /// Write a 64-bit unsigned integer (ULINT) to the PLC DB using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteUInt64Async(string address, ulong value, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            await _s7Protocol.WriteUInt64Async(address, value, cancellationToken);
+        }
+
+        /// <summary>
         /// Write a 64-bit unsigned integer (ULINT) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The DB number to write to.</param>
@@ -605,6 +585,18 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             await _s7Protocol.WriteUInt64Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
+        /// <summary>
+        /// Write a 32-bit floating point value (REAL) to the PLC DB using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteFloat32Async(string address, float value, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            await _s7Protocol.WriteFloat32Async(address, value, cancellationToken);
         }
 
         /// <summary>
@@ -622,6 +614,18 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
+        /// Write a 64-bit floating point value (LREAL/DOUBLE) to the PLC DB using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write.</param>
+        /// <param name="value">Value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteFloat64Async(string address, double value, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            await _s7Protocol.WriteFloat64Async(address, value, cancellationToken);
+        }
+
+        /// <summary>
         /// Write a 64-bit floating point value (LREAL/DOUBLE) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The DB number to write to.</param>
@@ -633,6 +637,20 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             await _s7Protocol.WriteFloat64Async(dbNumber, byteOffset, bitIndex, value, cancellationToken);
+        }
+
+
+        /// <summary>
+        /// Write a Siemens STRING into a DB using a textual address.
+        /// </summary>
+        /// <param name="address">Textual DB address to write.</param>
+        /// <param name="maxStringLength">Declared maximum length for the STRING (characters).</param>
+        /// <param name="value">String value to write.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        public async Task WriteStringAsync(string address, int maxStringLength, string value, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            await _s7Protocol.WriteStringAsync(address, maxStringLength, value, cancellationToken);
         }
 
         /// <summary>
@@ -650,20 +668,5 @@ namespace SYS8.Core.Driver
             EnsureConnected();
             await _s7Protocol.WriteStringAsync(dbNumber, byteOffset, bitIndex, maxStringLength, value, cancellationToken);
         }
-
-
-        /// <summary>
-        /// Write a boolean (single bit) to a DB in the PLC using a textual address.
-        /// </summary>
-        /// <param name="address">Textual DB address to write (for example "DB1.DBX0.1").</param>
-        /// <param name="value">Value to write.</param>
-        /// <param name="length">The length of the array</param>
-        /// <param name="cancellationToken">Optional cancellation token.</param>
-        public async Task<string> WriteBoolArrayAsync(string address, bool value, uint length, CancellationToken cancellationToken = default)
-        {
-            EnsureConnected();
-            return await _s7Protocol.WriteBoolArrayAsync(address, value, length, cancellationToken);
-        }
-
     }
 }
