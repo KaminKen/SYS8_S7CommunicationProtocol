@@ -118,6 +118,60 @@ namespace S7CommunicationApp
 
         }
 
+        private async void ReadOneData(SYS8Driver _driver, string datatype, string address)
+        {
+            using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
+            switch (datatype)
+            {
+                case "bool":
+                    bool readBool = await _driver.ReadBoolAsync(address);
+                    LogTextBox.AppendText($"Read Bool from {address}: {readBool}\r\n");
+                    break;
+                case "int16":
+                    short readInt16 = await _driver.ReadInt16Async(address);
+                    LogTextBox.AppendText($"Read Int16 from {address}: {readInt16}\r\n");
+                    break;
+                case "int32":
+                    int readInt32 = await _driver.ReadInt32Async(address);
+                    LogTextBox.AppendText($"Read Int32 from {address}: {readInt32}\r\n");
+                    break;
+                case "int64":
+                    long readInt64 = await _driver.ReadInt64Async(address);
+                    LogTextBox.AppendText($"Read Int64 from {address}: {readInt64}\r\n");
+                    break;
+                case "uint16":
+                    ushort readUInt16 = await _driver.ReadUInt16Async(address);
+                    LogTextBox.AppendText($"Read UInt16 from {address}: {readUInt16}\r\n");
+                    break;
+                case "uint32":
+                    uint readUInt32 = await _driver.ReadUInt32Async(address);
+                    LogTextBox.AppendText($"Read UInt32 from {address}: {readUInt32}\r\n");
+                    break;
+                case "uint64":
+                    ulong readUInt64 = await _driver.ReadUInt64Async(address);
+                    LogTextBox.AppendText($"Read UInt64 from {address}: {readUInt64}\r\n");
+                    break;
+                case "float32":
+                    float readFloat32 = await _driver.ReadFloat32Async(address);
+                    LogTextBox.AppendText($"Read Float32 from {address}: {readFloat32}\r\n");
+                    break;
+                case "float64":
+                    double readFloat64 = await _driver.ReadFloat64Async(address, cts.Token);
+                    LogTextBox.AppendText($"Read Float64 from {address}: {readFloat64}\r\n");
+                    break;
+                case "string":
+                    // Attempt to read up to 256 characters unless the Data textbox contains a smaller max length
+                    int maxRead = 256;
+                    if (int.TryParse(address, out int userMax) && userMax > 0)
+                        maxRead = userMax;
+                    string readString = await _driver.ReadStringAsync(address, maxRead, cts.Token);
+                    LogTextBox.AppendText($"Read String from {address}: '{readString}'\r\n");
+                    break;
+                default:
+                    throw new Exception("Please select from drop down list or if still fail then this datatype manipulation is not implemented.");
+            }
+        }
+
         private async void ReadButton_Click(object sender, EventArgs e)
         {
             try
@@ -132,59 +186,35 @@ namespace S7CommunicationApp
 
                 ReadButtonControls(false);
 
-                string datatypeCombox = DataTypeComBox.SelectedItem?.ToString() ?? DataTypeComBox.Text;
+                string datatype = (DataTypeComBox.SelectedItem?.ToString() ?? DataTypeComBox.Text).ToLower();
 
                 //var (dbNumber, byteOffset, bitIndex) = _driver.ParseStringAddress(AddressTextBox.Text);
 
-                using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
-                switch (datatypeCombox)
+                int length = 1;
+                if (!string.IsNullOrEmpty(LengthTextBox.Text) || !string.IsNullOrWhiteSpace(LengthTextBox.Text))
                 {
-                    case "Bool":
-                        bool readBool = await _driver.ReadBoolAsync(AddressTextBox.Text);
-                        LogTextBox.AppendText($"Read Bool from {AddressTextBox.Text}: {readBool}\r\n");
-                        break;
-                    case "Int16":
-                        short readInt16 = await _driver.ReadInt16Async(AddressTextBox.Text);
-                        LogTextBox.AppendText($"Read Int16 from {AddressTextBox.Text}: {readInt16}\r\n");
-                        break;
-                    case "Int32":
-                        int readInt32 = await _driver.ReadInt32Async(AddressTextBox.Text);
-                        LogTextBox.AppendText($"Read Int32 from {AddressTextBox.Text}: {readInt32}\r\n");
-                        break;
-                    case "Int64":
-                        long readInt64 = await _driver.ReadInt64Async(AddressTextBox.Text);
-                        LogTextBox.AppendText($"Read Int64 from {AddressTextBox.Text}: {readInt64}\r\n");
-                        break;
-                    case "UInt16":
-                        ushort readUInt16 = await _driver.ReadUInt16Async(AddressTextBox.Text);
-                        LogTextBox.AppendText($"Read UInt16 from {AddressTextBox.Text}: {readUInt16}\r\n");
-                        break;
-                    case "UInt32":
-                        uint readUInt32 = await _driver.ReadUInt32Async(AddressTextBox.Text);
-                        LogTextBox.AppendText($"Read UInt32 from {AddressTextBox.Text}: {readUInt32}\r\n");
-                        break;
-                    case "UInt64":
-                        ulong readUInt64 = await _driver.ReadUInt64Async(AddressTextBox.Text);
-                        LogTextBox.AppendText($"Read UInt64 from {AddressTextBox.Text}: {readUInt64}\r\n");
-                        break;
-                    case "Float32":
-                        float readFloat32 = await _driver.ReadFloat32Async(AddressTextBox.Text);
-                        LogTextBox.AppendText($"Read Float32 from {AddressTextBox.Text}: {readFloat32}\r\n");
-                        break;
-                    case "Float64":
-                        double readFloat64 = await _driver.ReadFloat64Async(AddressTextBox.Text, cts.Token);
-                        LogTextBox.AppendText($"Read Float64 from {AddressTextBox.Text}: {readFloat64}\r\n");
-                        break;
-                    case "String":
-                        // Attempt to read up to 256 characters unless the Data textbox contains a smaller max length
-                        int maxRead = 256;
-                        if (int.TryParse(AddressTextBox.Text, out int userMax) && userMax > 0)
-                            maxRead = userMax;
-                        string readString = await _driver.ReadStringAsync(AddressTextBox.Text, maxRead, cts.Token);
-                        LogTextBox.AppendText($"Read String from {AddressTextBox.Text}: '{readString}'\r\n");
-                        break;
-                    default:
-                        throw new Exception("Please select from drop down list or if still fail then this datatype manipulation is not implemented.");
+                    length = int.Parse(LengthTextBox.Text);
+                }
+
+                if (length == 1)
+                {
+                    ReadOneData(_driver, datatype, AddressTextBox.Text);
+                }
+                else
+                {
+                    using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
+                    if (datatype == "bool")
+                    { 
+                        bool[] result = await _driver.ReadBoolArrayAsync(AddressTextBox.Text, length, cts.Token);
+                        if (result.Length != length)
+                        {
+                            throw new Exception($"Expected {length} boolean values, but received {result.Length}.");
+                        }
+                        for (int i = 0; i < result.Length; i++)
+                        {
+                            LogTextBox.AppendText($"Read Bool[{i}] from {AddressTextBox.Text}: {result[i]}\r\n");
+                        }
+                    }
                 }
 
             }

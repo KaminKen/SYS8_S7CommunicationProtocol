@@ -53,7 +53,7 @@ namespace S7CommunicationApp
                 }
                 else
                 {
-                    string lastTopic = await ps.SubscribeArray(AddressTextBox.Text, (uint)length,DataTypeTextBox.Text);
+                    string lastTopic = await ps.SubscribeArray(AddressTextBox.Text, length,DataTypeTextBox.Text);
                     SubscribeListTextBox.AppendText($"{AddressTextBox.Text} ({DataTypeTextBox.Text}), Length: {length}, last topic: {lastTopic}{Environment.NewLine}");
                 }
 
