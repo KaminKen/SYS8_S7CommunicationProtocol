@@ -224,7 +224,76 @@ namespace SYS8.Core.Protocol
 
         }
 
-        
+
+        public async Task<bool[]> ReadBoolArrayAsync (string address, int count, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadBoolArrayAsync(dbNumber, byteOffset, bitIndex, count, cancellationToken);
+        }
+
+        public async Task<bool[]> ReadBoolArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int count, CancellationToken cancellationToken = default)
+        {
+            if(!(count > 0))
+            {
+                throw new ArgumentException("Count must be greater than 0 for reading boolean array.");
+            }
+
+            // Robust approach: many PLCs respond unreliably to multi-element BIT reads.
+            // Instead, read the minimal byte range that covers the requested bits and unpack locally.
+
+            if (bitIndex < 0 || bitIndex > 7)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitIndex), "Bit index must be in range 0..7.");
+            }
+            if (byteOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(byteOffset), "Byte offset must be >= 0.");
+            }
+
+            int startBit = (byteOffset * 8) + bitIndex;
+            int endBit = startBit + count - 1;
+            int startByte = startBit / 8;
+            int endByte = endBit / 8;
+            ushort bytesToRead = (ushort)(endByte - startByte + 1);
+
+            // Read raw bytes (BYTE) starting at the first covered byte. bitIndex is irrelevant for byte reads.
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, startByte, 0, S7Types.ItemTransport.Byte, bytesToRead); //read the whole bytes
+
+            Debug.WriteLine("S7 ReadVar request PDU for boolean array (BYTE read): " + BitConverter.ToString(pdu));
+
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+            Debug.WriteLine($"Response payload from BYTE read for bool array: {BitConverter.ToString(respPayload)}");
+
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, (ushort)(bytesToRead * 8)); // minimum bit length is number of bytes read * 8
+
+            int dataStartIndex = dataHeaderStartIndex + 4;
+            bool[] result = new bool[count]; // prepare result array and count is the number of bits requested (all boolean value)
+
+            // Siemens bit numbering: DBX<Byte>.<Bit> where Bit 0 is the LSB of the byte.
+            for (int i = 0; i < count; i++)
+            {
+                int absBit = startBit + i; //pad the bit index to get the absolute bit position in the DB  (by + starting bit), then calculate the byte and bit within that byte
+                int absByte = absBit / 8;
+                int bitInByte = absBit % 8; // 0..7 (LSB..MSB)
+                int relByte = absByte - startByte;
+
+                int bytePos = dataStartIndex + relByte;
+                if (bytePos < dataStartIndex || bytePos >= respPayload.Length)
+                {
+                    throw new Exception("Response payload too short for requested boolean array.");
+                }
+
+                byte b = respPayload[bytePos];
+                result[i] = (b & (1 << bitInByte)) != 0;
+            }
+
+            return result;
+        }
+
+
+
         /// <summary>
         /// Read a 16-bit signed integer (INT) from a DB specified by a textual address.
         /// The address is parsed and the request is delegated to the numeric overload.

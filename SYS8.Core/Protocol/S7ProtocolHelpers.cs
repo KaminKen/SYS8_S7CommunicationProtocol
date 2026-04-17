@@ -145,19 +145,6 @@ namespace SYS8.Core.Protocol
             Buffer.BlockCopy(header, 0, pdu, 0, header.Length);
             Buffer.BlockCopy(parameters, 0, pdu, header.Length, parameters.Length);
             return pdu;
-
-
-            /*
-             * Problem: Work with S7-1500 but not S7-1200
-             * The problem may lie under TIA portal which access is not granted in S7-1200 due to error 81 04
-             * 
-            Fix to try:
-            - header changed to 4 bytes of data
-            - pack 00 transprotSize 00 and 01 with it
-
-            Try and failed to get response from s7-1200 but works for s7-1500
-            */
-
         }
 
         internal static (ushort paramLength, ushort dataLength, int dataStartIndex) ValidateReadResponse(byte[] respPayload, byte expectedFunctionCode, byte expectedItemCount, ushort minimumBitLength) 

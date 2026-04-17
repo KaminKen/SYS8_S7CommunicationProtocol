@@ -146,6 +146,20 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadBoolAsync(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+
+        public async Task<bool[]> ReadBoolArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await _s7Protocol.ReadBoolArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
+        public async Task<bool[]> ReadBoolArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadBoolArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
         /// <summary>
         /// Read a 16-bit signed integer (INT) from a DB in the PLC using a textual address.
         /// </summary>
