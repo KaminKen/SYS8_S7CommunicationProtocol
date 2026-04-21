@@ -14,11 +14,13 @@ namespace SYS8.Core.PubSub
         public int ByteOffset { get; set; }
         public int BitIndex { get; set; }
 
-        public bool IsArrayElement { get; set; }
-        public string? ArrayRootTopic { get; set; }
-        public string? ArrayEndingTopic { get; set; }
-        public int ArrayIndex { get; set; }
+        public int AbsoluteBitOffset => (ByteOffset * 8) + BitIndex; //(DbNumber * 8 * 1024) can be added if needed for absolute addressing but to avoid huge number multiplication. Each db will be handled separately in the model.
 
-        public int? ArrayLength { get; set; }
+        //public bool IsArrayElement { get; set; }
+        //public string? ArrayRootTopic { get; set; }
+        //public string? ArrayEndingTopic { get; set; }
+        //public int ArrayIndex { get; set; }
+
+        //public int? ArrayLength { get; set; }
     }
 }

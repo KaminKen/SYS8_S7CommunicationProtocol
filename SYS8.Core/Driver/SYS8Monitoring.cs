@@ -77,6 +77,18 @@ namespace SYS8.Core.Driver
             _model.Unsubscribe(topic);
         }
 
+
+        /// <summary>
+        /// Unsubscribes from a range of topics, specified by a starting and optional ending topic.
+        /// If the ending topic is not provided, only the starting topic will be unsubscribed.
+        /// </summary>
+        /// <param name="startingTopic">The starting topic of the range to unsubscribe.</param>
+        /// <param name="endingTopic">The optional ending topic of the range to unsubscribe.</param>
+        public void UnsubscribeArray(string startingTopic, string? endingTopic = null)
+        {
+            _model.UnsubscribeArray(startingTopic, endingTopic);
+        }
+
         /// <summary>
         /// Unsubscribe all elements in the subscription list. This will remove all subscriptions and stop receiving updates for any topics.
         /// </summary>

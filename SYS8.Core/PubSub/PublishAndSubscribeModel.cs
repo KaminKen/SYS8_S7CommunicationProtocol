@@ -6,6 +6,8 @@ using System.Diagnostics;
 using System.Net;
 using System.Text;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Linq;
 
 namespace SYS8.Core.PubSub
 {
@@ -15,7 +17,9 @@ namespace SYS8.Core.PubSub
         //private Dictionary<string, string> _datatype = new();
         //private Dictionary<string, object> _previousValues = new();
         private readonly Dictionary<string, SubscriptionItem> _subscriptions = new();
+        private readonly object _lock = new object();
         private CancellationTokenSource? _pollingCts;
+        private readonly SynchronizationContext? _syncContext;
 
         public Action<string, object>? OnValueChanged { get; set; }
 
@@ -25,6 +29,7 @@ namespace SYS8.Core.PubSub
         public PublishAndSubscribeModel(SYS8Driver driver)
         {
             _driver = driver;
+            _syncContext = SynchronizationContext.Current;
         }
 
         /// <summary>
@@ -61,10 +66,17 @@ namespace SYS8.Core.PubSub
 
             Task.Run(async () =>
             {
-                while (!token.IsCancellationRequested)
+                try
                 {
-                    await CheckForUpdates();
-                    await Task.Delay(interval, token);
+                    while (!token.IsCancellationRequested)
+                    {
+                        await CheckForUpdates();
+                        await Task.Delay(interval, token);
+                    }
+                }
+                catch (OperationCanceledException)
+                {
+                    // normal shutdown
                 }
             }, token);
         }
@@ -77,7 +89,10 @@ namespace SYS8.Core.PubSub
 
         public List<string> GetSubscribedTopics()
         {
-            return _subscriptions.Keys.ToList();
+            lock (_lock)
+            {
+                return _subscriptions.Keys.ToList();
+            }
         }
 
 
@@ -88,25 +103,17 @@ namespace SYS8.Core.PubSub
             // This would involve storing the callback and topic in a data structure
            
             if (string.IsNullOrEmpty(topic) || string.IsNullOrEmpty(datatype))
-            {
                 throw new ArgumentException("Topic and datatype cannot be null or empty.");
-            }
-
 
             if (!_driver.IsConnected)
-            {
                 throw new InvalidOperationException("Driver is not connected.");
-            }
-
-            if(_subscriptions.ContainsKey(topic)) 
-            {
-                throw new InvalidOperationException($"Topic '{topic}' is already subscribed.");
-            }
 
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(topic);
             string normalizedType = datatype.ToLower();
 
-            object initialValue =  normalizedType switch {
+            // perform initial read (may be slow); do not hold lock while awaiting
+            object initialValue = normalizedType switch
+            {
                 "bool" => await _driver.ReadBoolAsync(topic),
                 "int16" => await _driver.ReadInt16Async(topic),
                 "uint16" => await _driver.ReadUInt16Async(topic),
@@ -117,52 +124,76 @@ namespace SYS8.Core.PubSub
                 "string" => string.Empty,
                 _ => throw new ArgumentException($"Unsupported data type: {datatype}")
             };
-            _subscriptions[topic] = new SubscriptionItem
+
+            lock (_lock)
             {
-                Topic = topic,
-                DataType = normalizedType,
-                PreviousValue = initialValue,
-                DbNumber = dbNumber,
-                ByteOffset = byteOffset,
-                BitIndex = bitIndex,
-                IsArrayElement = false,
-                ArrayRootTopic = null,
-                ArrayIndex = -1,
-                ArrayLength = 0
-            };
+                if (_subscriptions.ContainsKey(topic))
+                {
+                    throw new InvalidOperationException($"Topic '{topic}' is already subscribed.");
+                }
+
+                _subscriptions[topic] = new SubscriptionItem
+                {
+                    Topic = topic,
+                    DataType = normalizedType,
+                    PreviousValue = initialValue,
+                    DbNumber = dbNumber,
+                    ByteOffset = byteOffset,
+                    BitIndex = bitIndex
+                };
+            }
         }
 
 
-        public async Task<string> SubscribeArray(string? topic, int length, string? datatype) // , Action<string, object> callback
+        public async Task<string> SubscribeArray(string startingTopic, string endingTopic, string datatype)
         {
-            if (string.IsNullOrEmpty(topic) || string.IsNullOrEmpty(datatype))
+            if (string.IsNullOrEmpty(startingTopic) || string.IsNullOrEmpty(endingTopic) || string.IsNullOrEmpty(datatype))
             {
-                throw new ArgumentException("Topic and datatype cannot be null or empty.");
+                throw new ArgumentException("Starting topic, ending topic, and datatype cannot be null or empty.");
             }
+            if (!_driver.IsConnected)
+            {
+                throw new InvalidOperationException("Driver is not connected.");
+            }
+            var normalizedType = datatype.ToLower();
+            var (startDbNumber, startByteOffset, startBitIndex) = ParseStringAddress(startingTopic);
+            var (endDbNumber, endByteOffset, endBitIndex) = ParseStringAddress(endingTopic);
+            if (startDbNumber != endDbNumber)
+            {
+                throw new ArgumentException("Starting and ending topics must be in the same DB.");
+            }
+            int length = (endByteOffset * 8 + endBitIndex) - (startByteOffset * 8 + startBitIndex) + 1;
+            return await SubscribeArray(startingTopic, length, datatype);
+        }
+
+
+        public async Task<string> SubscribeArray(string startingTopic, int length, string datatype) // , Action<string, object> callback
+        {
+            if (string.IsNullOrEmpty(startingTopic) || string.IsNullOrEmpty(datatype))
+                throw new ArgumentException("Topic and datatype cannot be null or empty.");
 
             //there is checking if length is > 0 inside Read Method
 
 
             if (!_driver.IsConnected)
-            {
                 throw new InvalidOperationException("Driver is not connected.");
-            }
 
             var normalizedType = datatype.ToLower();
-            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(topic);
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(startingTopic);
 
             object[] returnValueArray;
             switch (datatype.ToLower())
             {
+                //only bool array is supported for now, other types can be added later if needed
                 case "bool":
-                    bool[] boolArray = await _driver.ReadBoolArrayAsync(topic, length);
+                    bool[] boolArray = await _driver.ReadBoolArrayAsync(startingTopic, length);
                     returnValueArray = boolArray.Cast<object>().ToArray();
                     break;
                 default:
                     throw new ArgumentException($"Unsupported data type: {datatype}");
             }
 
-            string lastTopic = topic;
+            string lastTopic = startingTopic;
 
             for (int i = 0; i < length; i++)
             {
@@ -172,39 +203,24 @@ namespace SYS8.Core.PubSub
 
                 string tempTopic = ConvertToAbsoluteAddress(dbNumber, localByteOffset, localBitIndex);
 
-                if (_subscriptions.ContainsKey(tempTopic))
+                lock (_lock)
                 {
-                    throw new InvalidOperationException($"Topic '{tempTopic}' is already subscribed.");
+                    if (_subscriptions.ContainsKey(tempTopic))
+                    {
+                        throw new InvalidOperationException($"Topic '{tempTopic}' is already subscribed.");
+                    }
+
+                    _subscriptions[tempTopic] = new SubscriptionItem
+                    {
+                        Topic = tempTopic,
+                        DataType = normalizedType,
+                        PreviousValue = returnValueArray[i],
+                        DbNumber = dbNumber,
+                        ByteOffset = localByteOffset,
+                        BitIndex = localBitIndex
+                    };
                 }
-
-                _subscriptions[tempTopic] = new SubscriptionItem
-                {
-                    Topic = tempTopic,
-                    DataType = normalizedType,
-                    PreviousValue = returnValueArray[i],
-                    DbNumber = dbNumber,
-                    ByteOffset = localByteOffset,
-                    BitIndex = localBitIndex,
-                    IsArrayElement = true,
-                    ArrayRootTopic = topic,
-                    ArrayIndex = i,
-                    ArrayLength = length
-                };
                 lastTopic = tempTopic;
-
-                //object initialValue = datatype.ToLower() switch
-                //{
-                //    "bool" => await _driver.ReadBoolAsync(dbNumber, localByteOffset, localBitIndex),
-                //    "int16" => await _driver.ReadInt16Async(dbNumber, localByteOffset, localBitIndex),
-                //    "uint16" => await _driver.ReadUInt16Async(dbNumber, localByteOffset, localBitIndex),
-                //    "int32" => await _driver.ReadInt32Async(dbNumber, localByteOffset, localBitIndex),
-                //    "uint32" => await _driver.ReadUInt32Async(dbNumber, localByteOffset, localBitIndex),
-                //    "float32" => await _driver.ReadFloat32Async(dbNumber, localByteOffset, localBitIndex),
-                //    "float64" => await _driver.ReadFloat64Async(dbNumber, localByteOffset, localBitIndex),
-                //    "string" => string.Empty,
-                //    _ => throw new ArgumentException($"Unsupported data type: {datatype}")
-                //};
-                //_previousValues[tempTopic] = initialValue;
             }
             return lastTopic; //last topic in the array, can be used for unsubscribing the whole array later 
         }
@@ -215,43 +231,65 @@ namespace SYS8.Core.PubSub
             // Implementation for unsubscribing from a topic
             // This would involve removing the callback and topic from the data structure
             if (!_driver.IsConnected)
-            {
                 throw new InvalidOperationException("Driver is not connected.");
-            }
-            if (!_subscriptions.ContainsKey(topic))
+
+            lock (_lock)
             {
-                throw new InvalidOperationException($"Topic '{topic}' is not subscribed.");
-            }
-            if (!_subscriptions[topic].IsArrayElement)
-            {
+                if (!_subscriptions.ContainsKey(topic))
+                    throw new InvalidOperationException($"Topic '{topic}' is not subscribed.");
+
                 _subscriptions.Remove(topic);
-            }
-            else
-            {
-                UnsubscribeArray(_subscriptions[topic].ArrayRootTopic!);
             }
         }
 
-        private void UnsubscribeArray(string rootTopic)
+        public void UnsubscribeArray(string startingTopic, string? endingTopic = null)
         {
+            //if endingTopic is null then it will unsubscribe all array elements starting from startingTopic
             if (!_driver.IsConnected)
-            {
                 throw new InvalidOperationException("Driver is not connected.");
-            }
-            var topicsToRemove = _subscriptions.Values.Where(s => s.IsArrayElement && s.ArrayRootTopic == rootTopic).Select(s => s.Topic).ToList();
-            foreach (var topic in topicsToRemove)
+
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(startingTopic);
+            int startAbsoluteBitOffset = byteOffset * 8 + bitIndex;
+            int endAbsoluteBitOffset = startAbsoluteBitOffset; //place holder
+
+            if (!string.IsNullOrEmpty(endingTopic))
             {
-                _subscriptions.Remove(topic);
+                var (endDbNumber, endByteOffset, endBitIndex) = ParseStringAddress(endingTopic);
+                if (dbNumber != endDbNumber)
+                {
+                    throw new ArgumentException("Starting and ending topics must be in the same DB.");
+                }
+                endAbsoluteBitOffset = endByteOffset * 8 + endBitIndex;
+                if (endAbsoluteBitOffset < startAbsoluteBitOffset)
+                {
+                    throw new ArgumentException("Ending topic must not be before starting topic.");
+                }
+            }
+
+            List<string> topicsToRemove;
+            lock (_lock)
+            {
+                topicsToRemove = _subscriptions.Values.Where(s => s.DbNumber == dbNumber)
+                    .Where(s => (s.ByteOffset * 8 + s.BitIndex) >= startAbsoluteBitOffset && (s.ByteOffset * 8 + s.BitIndex) <= endAbsoluteBitOffset)
+                    .Select(s => s.Topic)
+                    .ToList();
+
+                foreach (var topic in topicsToRemove)
+                {
+                    _subscriptions.Remove(topic);
+                }
             }
         }
 
         public void UnsubscribeAll()
         {
             if (!_driver.IsConnected)
-            {
                 throw new InvalidOperationException("Driver is not connected.");
+
+            lock (_lock)
+            {
+                _subscriptions.Clear();
             }
-            _subscriptions.Clear();
         }   
 
 
@@ -264,56 +302,78 @@ namespace SYS8.Core.PubSub
                 throw new InvalidOperationException("Driver is not connected.");
             }
 
-            var processedTopics = new HashSet<string>();
-
-            var boolArrayGroups = _subscriptions.Values
-                .Where(s => s.DataType == "bool" && s.IsArrayElement && !string.IsNullOrEmpty(s.ArrayRootTopic))
-                .GroupBy(s => s.ArrayRootTopic);
-
-            foreach (var group in boolArrayGroups)
+            List<SubscriptionItem> subsSnapShot;
+            lock (_lock)
             {
-                string rootTopic = group.Key!;
-                int length = group.Max(x => x.ArrayLength ?? 0);
+                subsSnapShot = _subscriptions.Values.ToList(); // snapshot under lock
+            }
 
-                bool[] newValues = await _driver.ReadBoolArrayAsync(rootTopic, length);
+            var boolSubs = subsSnapShot.Where(s => s.DataType == "bool").ToList();
+            var nonBoolSubs = subsSnapShot.Where(s => s.DataType != "bool").ToList();
 
-                foreach (var sub in group)
+            if (boolSubs.Count > 0)
+            {
+                var sms = new SubscriptionManagementSystem();
+                var boolRanges = sms.GetBooleanSubscriptionSortedRange(boolSubs);
+
+                foreach(var range in boolRanges)
                 {
-                    bool newValue = newValues[sub.ArrayIndex];
-                    if (!Equals(newValue, sub.PreviousValue))
+                    int length = range.EndAbsoluteBitOffset - range.StartAbsoluteBitOffset + 1;
+                    bool[] newEachRangeValues = await _driver.ReadBoolArrayAsync(range.Items.First().Topic, length); // Read the entire range at once
+                    for (int i = 0; i < range.Items.Count; i++)
                     {
-                        sub.PreviousValue = newValue;
-                        OnValueChanged?.Invoke(sub.Topic, newValue);
+                        var sub = range.Items[i];
+                        bool newValue = newEachRangeValues[i];
+                        if (!Equals(newValue, sub.PreviousValue))
+                        {
+                            sub.PreviousValue = newValue;
+                            OnValueChanged?.Invoke(sub.Topic, newValue);
+                        }
                     }
-
-                    processedTopics.Add(sub.Topic);
                 }
             }
 
-            foreach (var topic in _subscriptions.Keys.ToList())
+            foreach (var items in nonBoolSubs)
             {
-                if (processedTopics.Contains(topic))
-                    continue;
+                //if (processedTopics.Contains(topic))
+                //    continue;
 
-                var sub = _subscriptions[topic];
+
+                // use local copy of subscription item (from snapshot)
+                var sub = items;
 
                 object newValue = sub.DataType switch
                 {
-                    "bool" => await _driver.ReadBoolAsync(topic),
-                    "int16" => await _driver.ReadInt16Async(topic),
-                    "uint16" => await _driver.ReadUInt16Async(topic),
-                    "int32" => await _driver.ReadInt32Async(topic),
-                    "uint32" => await _driver.ReadUInt32Async(topic),
-                    "float32" => await _driver.ReadFloat32Async(topic),
-                    "float64" => await _driver.ReadFloat64Async(topic),
+                    "int16" => await _driver.ReadInt16Async(sub.Topic),
+                    "uint16" => await _driver.ReadUInt16Async(sub.Topic),
+                    "int32" => await _driver.ReadInt32Async(sub.Topic),
+                    "uint32" => await _driver.ReadUInt32Async(sub.Topic),
+                    "float32" => await _driver.ReadFloat32Async(sub.Topic),
+                    "float64" => await _driver.ReadFloat64Async(sub.Topic),
                     "string" => string.Empty,
                     _ => throw new ArgumentException($"Unsupported data type: {sub.DataType}")
                 };
 
                 if (!Equals(newValue, sub.PreviousValue))
                 {
-                    sub.PreviousValue = newValue;
-                    OnValueChanged?.Invoke(topic, newValue);
+                    // update the live subscription item if it still exists
+                    lock (_lock)
+                    {
+                        if (_subscriptions.TryGetValue(sub.Topic, out var live))
+                        {
+                            live.PreviousValue = newValue;
+                        }
+                    }
+
+                    // invoke callback on captured synchronization context if present
+                    if (_syncContext != null)
+                    {
+                        _syncContext.Post(_ => OnValueChanged?.Invoke(sub.Topic, newValue), null);
+                    }
+                    else
+                    {
+                        OnValueChanged?.Invoke(sub.Topic, newValue);
+                    }
                 }
             }
         }
