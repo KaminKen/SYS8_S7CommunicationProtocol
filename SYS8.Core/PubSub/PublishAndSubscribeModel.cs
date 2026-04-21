@@ -315,8 +315,13 @@ namespace SYS8.Core.PubSub
             {
                 var sms = new SubscriptionManagementSystem();
                 var boolRanges = sms.GetBooleanSubscriptionSortedRange(boolSubs);
+                Debug.WriteLine($"Found {boolRanges.Count} boolean ranges to read.");
+                foreach (var range in boolRanges)
+                {
+                    Debug.WriteLine($"Range: {range.StartAbsoluteBitOffset} to {range.EndAbsoluteBitOffset}, Items: {range.Items.Count}");
+                }
 
-                foreach(var range in boolRanges)
+                foreach (var range in boolRanges)
                 {
                     int length = range.EndAbsoluteBitOffset - range.StartAbsoluteBitOffset + 1;
                     bool[] newEachRangeValues = await _driver.ReadBoolArrayAsync(range.Items.First().Topic, length); // Read the entire range at once
