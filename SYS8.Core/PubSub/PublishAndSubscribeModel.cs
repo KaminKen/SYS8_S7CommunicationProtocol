@@ -222,8 +222,38 @@ namespace SYS8.Core.PubSub
             {
                 throw new InvalidOperationException($"Topic '{topic}' is not subscribed.");
             }
-            _subscriptions.Remove(topic);
+            if (!_subscriptions[topic].IsArrayElement)
+            {
+                _subscriptions.Remove(topic);
+            }
+            else
+            {
+                UnsubscribeArray(_subscriptions[topic].ArrayRootTopic!);
+            }
         }
+
+        private void UnsubscribeArray(string rootTopic)
+        {
+            if (!_driver.IsConnected)
+            {
+                throw new InvalidOperationException("Driver is not connected.");
+            }
+            var topicsToRemove = _subscriptions.Values.Where(s => s.IsArrayElement && s.ArrayRootTopic == rootTopic).Select(s => s.Topic).ToList();
+            foreach (var topic in topicsToRemove)
+            {
+                _subscriptions.Remove(topic);
+            }
+        }
+
+        public void UnsubscribeAll()
+        {
+            if (!_driver.IsConnected)
+            {
+                throw new InvalidOperationException("Driver is not connected.");
+            }
+            _subscriptions.Clear();
+        }   
+
 
         public async Task CheckForUpdates()
         {

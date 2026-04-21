@@ -69,12 +69,20 @@ namespace SYS8.Core.Driver
 
 
         /// <summary>
-        /// Unsubscribes from a previously subscribed topic.
+        /// Unsubscribes from a previously subscribed topic and also work for array topics. If the topic is an array, it will unsubscribe from all elements of that array.
         /// </summary>
         /// <param name="topic">The topic to unsubscribe.</param>
         public void Unsubscribe(string topic)
         {
             _model.Unsubscribe(topic);
+        }
+
+        /// <summary>
+        /// Unsubscribe all elements in the subscription list. This will remove all subscriptions and stop receiving updates for any topics.
+        /// </summary>
+        public void UnsubscribeAll()
+        {
+            _model.UnsubscribeAll();
         }
 
         /// <summary>
