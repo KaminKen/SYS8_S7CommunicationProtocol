@@ -1,11 +1,40 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Text;
 
 namespace SYS8.Core.Protocol
 {
     internal static class S7ProtocolHelpers
     {
+        // #region agent log (ndjson)
+        private static readonly object _agentLogLock = new object();
+        internal static void AgentLog(string runId, string hypothesisId, string location, string message, object data)
+        {
+            try
+            {
+                var payload = new
+                {
+                    sessionId = "68044a",
+                    runId,
+                    hypothesisId,
+                    location,
+                    message,
+                    data,
+                    timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+                };
+                string json = System.Text.Json.JsonSerializer.Serialize(payload);
+                lock (_agentLogLock)
+                {
+                    File.AppendAllText(@"D:\SYSTENCE\GitHub\SYS8_S7CommunicationProtocol\debug-68044a.log", json + Environment.NewLine);
+                }
+            }
+            catch
+            {
+            }
+        }
+        // #endregion
+
         //internal: accessible in the same project
         private static byte _lastSequence = 0; // for tracking sequence numbers in messages
         private static readonly object _seqLock = new object();
@@ -163,6 +192,14 @@ namespace SYS8.Core.Protocol
             if (respPayload[0] != 0x32)
             {
                 throw new Exception("Invalid S7 protocol ID in read response.");
+            }
+
+            if (respPayload[1] == 0x02)
+            {
+                // ACK without data: error class/code are present directly after the 10-byte header.
+                byte errorClass = respPayload.Length > 10 ? respPayload[10] : (byte)0x00;
+                byte errorCode = respPayload.Length > 11 ? respPayload[11] : (byte)0x00;
+                throw new Exception($"ReadVar rejected by PLC (ROSCTR=0x02 ACK). ErrorClass=0x{errorClass:X2}, ErrorCode=0x{errorCode:X2}.");
             }
 
             if (respPayload[1] != 0x03) // rosctr == Ack_Data

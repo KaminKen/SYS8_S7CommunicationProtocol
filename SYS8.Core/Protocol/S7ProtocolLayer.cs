@@ -704,23 +704,27 @@ namespace SYS8.Core.Protocol
         /// <returns>The decoded string (empty if declared max is 0).</returns>
         public async Task<string> ReadStringAsync(ushort dbNumber,int byteOffset,int bitIndex,int maxStringLength, CancellationToken cancellationToken = default)
         {
-            // Request as octet string: expected returned length is (maxStringLength + 2) bytes where first byte = declared max and second = current length
-            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, (ushort)(maxStringLength + 2));
+            // PLC may negotiate a small PDU (e.g. 240). Reading (maxStringLength + 2) bytes can exceed it and be rejected.
+            // Robust approach: read STRING header (2 bytes) first, then read currentLength bytes in chunks.
 
-            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            // 1) Read 2-byte STRING header (declaredMax, currentLength)
+            byte[] headerPdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(
+                FunctionCode.ReadVar,
+                dbNumber,
+                byteOffset,
+                0,
+                S7Types.ItemTransport.Byte,
+                2);
 
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+            await _tpktCotp.SendPayloadAsync(headerPdu, cancellationToken);
+            byte[] headerResp = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
 
-            Debug.WriteLine("Resp payload: " + BitConverter.ToString(respPayload));
+            var (_, _, headerDataHeaderStart) = S7ProtocolHelpers.ValidateReadResponse(headerResp, 0x04, 0x01, 16);
+            int headerDataStart = headerDataHeaderStart + 4;
+            byte declaredMaxLength = headerResp[headerDataStart];
+            byte currentLength = headerResp[headerDataStart + 1];
 
-            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, (ushort)((maxStringLength + 2) * 8));
-
-            int dataStartIndex = dataHeaderStartIndex + 4;
-
-            byte declaredMaxLength = respPayload[dataStartIndex];
-            byte currentLength = respPayload[dataStartIndex + 1];
-
-            if (declaredMaxLength == 0)
+            if (declaredMaxLength == 0 || currentLength == 0)
             {
                 return string.Empty;
             }
@@ -735,11 +739,39 @@ namespace SYS8.Core.Protocol
                 throw new Exception($"Returned STRING length {currentLength} exceeds requested max length {maxStringLength}.");
             }
 
+            // 2) Read currentLength bytes starting at byteOffset+2 (string body)
+            int remaining = currentLength;
+            int readOffset = byteOffset + 2;
             byte[] stringBytes = new byte[currentLength];
-            Buffer.BlockCopy(respPayload, dataStartIndex + 2, stringBytes, 0, currentLength);
+            int dst = 0;
 
-            string value = Encoding.ASCII.GetString(stringBytes);
-            return value;
+            // Conservative bound for data payload to fit within negotiated PDU.
+            int maxChunk = Math.Max(1, _pduLength - 40);
+
+            while (remaining > 0)
+            {
+                ushort chunk = (ushort)Math.Min(remaining, maxChunk);
+                byte[] chunkPdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(
+                    FunctionCode.ReadVar,
+                    dbNumber,
+                    readOffset,
+                    0,
+                    S7Types.ItemTransport.Byte,
+                    chunk);
+
+                await _tpktCotp.SendPayloadAsync(chunkPdu, cancellationToken);
+                byte[] chunkResp = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+                var (_, _, chunkDataHeaderStart) = S7ProtocolHelpers.ValidateReadResponse(chunkResp, 0x04, 0x01, (ushort)(chunk * 8));
+                int chunkDataStart = chunkDataHeaderStart + 4;
+
+                Buffer.BlockCopy(chunkResp, chunkDataStart, stringBytes, dst, chunk);
+                dst += chunk;
+                remaining -= chunk;
+                readOffset += chunk;
+            }
+
+            return Encoding.ASCII.GetString(stringBytes);
         }
 
         public async Task<string> WriteBoolArrayAsync(string address, bool value, uint length, CancellationToken cancellationToken = default)
@@ -1119,14 +1151,53 @@ namespace SYS8.Core.Protocol
         /// <param name="value">String value to write.</param>
         public async Task WriteStringAsync(ushort dbNumber,int byteOffset,int bitIndex,int maxStringLength, string value, CancellationToken cancellationToken = default)
         {
-            byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.WriteVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.Byte, (ushort)(maxStringLength + 2));
-            byte[] data = S7ProtocolHelpers.BuildWriteDataBlockFromString(maxStringLength, value);
-            byte[] pdu = new byte[headerAndParams.Length + data.Length];
-            Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
-            Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
-            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
-            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
-            S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+            if (value == null) value = string.Empty;
+            byte[] strBytes = Encoding.ASCII.GetBytes(value);
+            if (strBytes.Length > maxStringLength) throw new ArgumentException("String is longer than declared maxStringLength", nameof(value));
+
+            // Only write the bytes we need: [declaredMax][currentLen][chars...]
+            byte[] fullPayload = new byte[2 + strBytes.Length];
+            fullPayload[0] = (byte)maxStringLength;
+            fullPayload[1] = (byte)strBytes.Length;
+            Buffer.BlockCopy(strBytes, 0, fullPayload, 2, strBytes.Length);
+
+            // Conservative payload bound for negotiated PDU (keeps both request and response well below limit).
+            int maxChunk = Math.Max(1, _pduLength - 40);
+
+            int remaining = fullPayload.Length;
+            int src = 0;
+            int writeOffset = byteOffset;
+
+            while (remaining > 0)
+            {
+                int chunkLen = Math.Min(remaining, maxChunk);
+                byte[] chunk = new byte[chunkLen];
+                Buffer.BlockCopy(fullPayload, src, chunk, 0, chunkLen);
+
+                byte[] headerAndParams = S7ProtocolHelpers.BuildReadWriteSetupRequest(
+                    FunctionCode.WriteVar,
+                    dbNumber,
+                    writeOffset,
+                    0,
+                    S7Types.ItemTransport.Byte,
+                    (ushort)chunkLen);
+
+                // For DB byte writes, many PLCs expect transport "BYTE/WORD/DWORD" (0x04) with length in bits.
+                // Using OctetString (0x09) can be rejected with return code 0x07.
+                byte[] data = S7ProtocolHelpers.BuildWriteDataBlock(S7Types.DataTransport.ByteWordDword, (ushort)(chunkLen * 8), chunk);
+
+                byte[] pdu = new byte[headerAndParams.Length + data.Length];
+                Buffer.BlockCopy(headerAndParams, 0, pdu, 0, headerAndParams.Length);
+                Buffer.BlockCopy(data, 0, pdu, headerAndParams.Length, data.Length);
+
+                await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+                byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+                S7ProtocolHelpers.ValidateWriteResponse(respPayload);
+
+                remaining -= chunkLen;
+                src += chunkLen;
+                writeOffset += chunkLen;
+            }
         }
     }
 
