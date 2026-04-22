@@ -21,10 +21,51 @@ namespace SYS8.Core.PubSub
         private CancellationTokenSource? _pollingCts;
         private readonly SynchronizationContext? _syncContext;
 
+        private bool _boolRangesDirty = true;
+        private List<SubscriptionRange> _cachedBoolRanges = new();
+
+        private void UpdateAllRangeDirtiness(bool isDirty)
+        {
+            _boolRangesDirty = isDirty;
+        }
+
+        private void UpdateRangeDirtinessByDataType(string datatype, bool isDirty)
+        {
+            switch (datatype.ToLowerInvariant())
+            {
+                // Implement other datatype later
+                case "bool":
+                    _boolRangesDirty = isDirty;
+                    break;
+                default:
+                    // To be sure, all are now dirty
+                    UpdateAllRangeDirtiness(isDirty);
+                    break;
+            }
+        }
+
         public Action<string, object>? OnValueChanged { get; set; }
 
-        public bool IsEmpty => _subscriptions.Count == 0;
-        public bool IsPolling => _pollingCts != null;
+        public bool IsEmpty
+        {
+            get
+            {
+                lock (_lock) 
+                {
+                    return _subscriptions.Count == 0;
+                }
+            }
+        }
+        public bool IsPolling
+        {
+            get 
+            {
+                lock (_lock) 
+                {
+                    return _pollingCts != null;
+                }
+            }
+        }
 
         public PublishAndSubscribeModel(SYS8Driver driver)
         {
@@ -51,14 +92,17 @@ namespace SYS8.Core.PubSub
 
         public void StartPolling(int interval = 1000)
         {
-            if (_pollingCts != null)
+            lock (_lock)
             {
-                throw new InvalidOperationException("Polling is already running.");
-            }
+                if (_pollingCts != null)
+                {
+                    throw new InvalidOperationException("Polling is already running.");
+                }
 
-            if (IsEmpty)
-            {
-                throw new InvalidOperationException("No topics subscribed.");
+                if (IsEmpty)
+                {
+                    throw new InvalidOperationException("No topics subscribed.");
+                }
             }
 
             _pollingCts = new CancellationTokenSource();  // create fresh token
@@ -83,8 +127,11 @@ namespace SYS8.Core.PubSub
 
         public void StopPolling()
         {
-            _pollingCts?.Cancel();
-            _pollingCts = null;
+            lock (_lock)
+            {
+                _pollingCts?.Cancel();
+                _pollingCts = null;
+            }
         }
 
         public List<string> GetSubscribedTopics()
@@ -109,7 +156,7 @@ namespace SYS8.Core.PubSub
                 throw new InvalidOperationException("Driver is not connected.");
 
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(topic);
-            string normalizedType = datatype.ToLower();
+            string normalizedType = datatype.ToLowerInvariant();
 
             // perform initial read (may be slow); do not hold lock while awaiting
             object initialValue = normalizedType switch
@@ -141,6 +188,7 @@ namespace SYS8.Core.PubSub
                     ByteOffset = byteOffset,
                     BitIndex = bitIndex
                 };
+                UpdateRangeDirtinessByDataType(normalizedType, true);
             }
         }
 
@@ -155,7 +203,7 @@ namespace SYS8.Core.PubSub
             {
                 throw new InvalidOperationException("Driver is not connected.");
             }
-            var normalizedType = datatype.ToLower();
+            var normalizedType = datatype.ToLowerInvariant();
             var (startDbNumber, startByteOffset, startBitIndex) = ParseStringAddress(startingTopic);
             var (endDbNumber, endByteOffset, endBitIndex) = ParseStringAddress(endingTopic);
             if (startDbNumber != endDbNumber)
@@ -178,11 +226,11 @@ namespace SYS8.Core.PubSub
             if (!_driver.IsConnected)
                 throw new InvalidOperationException("Driver is not connected.");
 
-            var normalizedType = datatype.ToLower();
+            var normalizedType = datatype.ToLowerInvariant();
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(startingTopic);
 
             object[] returnValueArray;
-            switch (datatype.ToLower())
+            switch (normalizedType)
             {
                 //only bool array is supported for now, other types can be added later if needed
                 case "bool":
@@ -219,6 +267,7 @@ namespace SYS8.Core.PubSub
                         ByteOffset = localByteOffset,
                         BitIndex = localBitIndex
                     };
+                    UpdateRangeDirtinessByDataType(normalizedType, true);
                 }
                 lastTopic = tempTopic;
             }
@@ -237,6 +286,8 @@ namespace SYS8.Core.PubSub
             {
                 if (!_subscriptions.ContainsKey(topic))
                     throw new InvalidOperationException($"Topic '{topic}' is not subscribed.");
+
+                UpdateRangeDirtinessByDataType(_subscriptions[topic].DataType, true);
 
                 _subscriptions.Remove(topic);
             }
@@ -270,7 +321,7 @@ namespace SYS8.Core.PubSub
             lock (_lock)
             {
                 topicsToRemove = _subscriptions.Values.Where(s => s.DbNumber == dbNumber)
-                    .Where(s => (s.ByteOffset * 8 + s.BitIndex) >= startAbsoluteBitOffset && (s.ByteOffset * 8 + s.BitIndex) <= endAbsoluteBitOffset)
+                    .Where(s => (s.AbsoluteBitOffset) >= startAbsoluteBitOffset && (s.AbsoluteBitOffset) <= endAbsoluteBitOffset)
                     .Select(s => s.Topic)
                     .ToList();
 
@@ -278,6 +329,7 @@ namespace SYS8.Core.PubSub
                 {
                     _subscriptions.Remove(topic);
                 }
+                UpdateAllRangeDirtiness(true);
             }
         }
 
@@ -289,6 +341,7 @@ namespace SYS8.Core.PubSub
             lock (_lock)
             {
                 _subscriptions.Clear();
+                UpdateAllRangeDirtiness(true);
             }
         }   
 
@@ -313,8 +366,20 @@ namespace SYS8.Core.PubSub
 
             if (boolSubs.Count > 0)
             {
-                var sms = new SubscriptionManagementSystem();
-                var boolRanges = sms.GetBooleanSubscriptionSortedRange(boolSubs);
+                List<SubscriptionRange> boolRanges;
+
+                lock (_lock)
+                {
+                    if (_boolRangesDirty)
+                    {
+                        var sms = new SubscriptionManagementSystem();
+                        _cachedBoolRanges = sms.GetBooleanSubscriptionSortedRange(_subscriptions.Values);
+                        _boolRangesDirty = false; //cleaned
+                    }
+
+                    boolRanges = _cachedBoolRanges.ToList();
+                }
+
                 Debug.WriteLine($"Found {boolRanges.Count} boolean ranges to read.");
                 foreach (var range in boolRanges)
                 {

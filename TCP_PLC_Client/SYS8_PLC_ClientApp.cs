@@ -186,7 +186,7 @@ namespace S7CommunicationApp
 
                 ReadButtonControls(false);
 
-                string datatype = (DataTypeComBox.SelectedItem?.ToString() ?? DataTypeComBox.Text).ToLower();
+                string datatype = (DataTypeComBox.SelectedItem?.ToString() ?? DataTypeComBox.Text).ToLowerInvariant();
 
                 //var (dbNumber, byteOffset, bitIndex) = _driver.ParseStringAddress(AddressTextBox.Text);
 
@@ -317,7 +317,7 @@ namespace S7CommunicationApp
                 if (string.IsNullOrWhiteSpace(AddressTextBox.Text))
                     throw new Exception("Address is required.");
 
-                string datatype = (DataTypeComBox.SelectedItem?.ToString() ?? DataTypeComBox.Text).ToLower();
+                string datatype = (DataTypeComBox.SelectedItem?.ToString() ?? DataTypeComBox.Text).ToLowerInvariant();
 
                 //var (dbNumber, byteOffset, bitIndex) = _driver.ParseStringAddress(AddressTextBox.Text);
 
