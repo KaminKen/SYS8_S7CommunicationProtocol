@@ -301,7 +301,7 @@ namespace SYS8.Core.Protocol
         /// <param name="address">Textual DB address (for example "DB1.DBW0" or "DB1.DBD0").</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 16-bit signed value read from the PLC.</returns>
-        public async Task<Int16> ReadInt16Async(string address, CancellationToken cancellationToken = default)
+        public async Task<short> ReadInt16Async(string address, CancellationToken cancellationToken = default)
         {
             var(dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             return await ReadInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
@@ -319,7 +319,7 @@ namespace SYS8.Core.Protocol
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 16-bit signed value read from the PLC.</returns>
         /// <exception cref="Exception">Thrown when the PLC response is invalid or indicates an error.</exception>
-        public async Task<Int16> ReadInt16Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
+        public async Task<short> ReadInt16Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
         {
             // Similar to ReadBoolAsync, but with parameters set for reading a 16-bit integer
             // transport size = 0x05 for INT, 4 data header parameters and data length = 2 bytes
@@ -337,10 +337,68 @@ namespace SYS8.Core.Protocol
             var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 16);
 
             int dataStartIndex = dataHeaderStartIndex + 4; // data starts after the 4 bytes of return code, transport size, and bit length
-            Int16 value = (short)((respPayload[dataStartIndex] << 8) | respPayload[dataStartIndex + 1]); // combine 2 bytes of data into an Int16 value
+            short value = (short)((respPayload[dataStartIndex] << 8) | respPayload[dataStartIndex + 1]); // combine 2 bytes of data into an Int16 value
             return value;
 
         }
+
+
+        public async Task<short[]> ReadInt16ArrayAsync(string address, int count, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadInt16ArrayAsync(dbNumber, byteOffset, bitIndex, count, cancellationToken);
+        }
+
+        public async Task<short[]> ReadInt16ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int count, CancellationToken cancellationToken = default)
+        {
+            if (!(count > 0))
+            {
+                throw new ArgumentException("Count must be greater than 0 for reading Int16 array.");
+            }
+
+            if (bitIndex < 0 || bitIndex > 7)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitIndex), "Bit index must be in range 0..7.");
+            }
+            if (byteOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(byteOffset), "Byte offset must be >= 0.");
+            }
+
+            int startByte = byteOffset;
+            ushort bytesToRead = (ushort)(count * 2);
+
+            // Read raw bytes (BYTE) starting at the first covered byte. bitIndex is irrelevant for byte reads.
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, startByte, 0, S7Types.ItemTransport.Byte, bytesToRead); //read the whole bytes
+
+            Debug.WriteLine("S7 ReadVar request PDU for Int16 array (BYTE read): " + BitConverter.ToString(pdu));
+
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+            Debug.WriteLine($"Response payload from BYTE read for Int16 array: {BitConverter.ToString(respPayload)}");
+
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, (ushort)(bytesToRead * 8)); // minimum bit length is number of bytes read * 8
+
+            int dataStartIndex = dataHeaderStartIndex + 4;
+            short[] result = new short[count]; // prepare result array and count is the number of Int16 values requested
+
+            // Siemens bit numbering: DBX<Byte>.<Bit> where Bit 0 is the LSB of the byte.
+            for (int i = 0; i < count; i++)
+            {
+                // i * 2 for each int16 value
+                int idx = i * 2;
+                // idx is an offset inside the data area. Ensure the two bytes for this Int16 are present
+                if (dataStartIndex + idx + 1 >= respPayload.Length)
+                {
+                    throw new Exception("Response payload too short for requested Int16 array.");
+                }
+                result[i] = (short)((respPayload[dataStartIndex + idx] << 8) | respPayload[dataStartIndex + idx + 1]);
+            }
+
+            return result;
+        }
+
 
 
         /// <summary>
@@ -350,7 +408,7 @@ namespace SYS8.Core.Protocol
         /// <param name="address">Textual DB address (for example "DB1.DBD0").</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 32-bit signed value read from the PLC.</returns>
-        public async Task<Int32> ReadInt32Async(string address, CancellationToken cancellationToken = default)
+        public async Task<int> ReadInt32Async(string address, CancellationToken cancellationToken = default)
         {
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
             return await ReadInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
@@ -364,7 +422,7 @@ namespace SYS8.Core.Protocol
         /// <param name="byteOffset">Byte offset inside the DB.</param>
         /// <param name="bitIndex">Ignored for byte-aligned types.</param>
         /// <returns>The 32-bit signed value read from the PLC.</returns>
-        public async Task<Int32> ReadInt32Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
+        public async Task<int> ReadInt32Async(ushort dbNumber,int byteOffset,int bitIndex,CancellationToken cancellationToken = default)
         {
             // DINT: request 4 bytes (helper will set parameter length to 32 bits)
             byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, byteOffset, bitIndex, S7Types.ItemTransport.DInt, 4);
@@ -380,12 +438,69 @@ namespace SYS8.Core.Protocol
             var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, 32);
 
             int dataStartIndex = dataHeaderStartIndex + 4; // data starts after the 4 bytes of return code, transport size, and bit length
-            Int32 value =
+            int value =
                 (respPayload[dataStartIndex] << 24) |
                 (respPayload[dataStartIndex + 1] << 16) |
                 (respPayload[dataStartIndex + 2] << 8) |
                  respPayload[dataStartIndex + 3];
             return value;
+        }
+
+        public async Task<int[]> ReadInt32ArrayAsync(string address, int count, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadInt32ArrayAsync(dbNumber, byteOffset, bitIndex, count, cancellationToken);
+        }
+
+        public async Task<int[]> ReadInt32ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int count, CancellationToken cancellationToken = default)
+        {
+            if (!(count > 0))
+            {
+                throw new ArgumentException("Count must be greater than 0 for reading Int32 array.");
+            }
+
+
+            if (bitIndex < 0 || bitIndex > 7)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitIndex), "Bit index must be in range 0..7.");
+            }
+            if (byteOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(byteOffset), "Byte offset must be >= 0.");
+            }
+
+            int startByte = byteOffset;
+            ushort bytesToRead = (ushort)(count * 4);
+
+            // Read raw bytes (BYTE) starting at the first covered byte. bitIndex is irrelevant for byte reads.
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, startByte, 0, S7Types.ItemTransport.Byte, bytesToRead); //read the whole bytes
+
+            Debug.WriteLine("S7 ReadVar request PDU for Int32 array (BYTE read): " + BitConverter.ToString(pdu));
+
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+            Debug.WriteLine($"Response payload from BYTE read for Int32 array: {BitConverter.ToString(respPayload)}");
+
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, (ushort)(bytesToRead * 8)); // minimum bit length is number of bytes read * 8
+
+            int dataStartIndex = dataHeaderStartIndex + 4;
+            int[] result = new int[count]; // prepare result array and count is the number of Int32 values requested
+
+            // Siemens bit numbering: DBX<Byte>.<Bit> where Bit 0 is the LSB of the byte.
+            for (int i = 0; i < count; i++)
+            {
+                // i * 2 for each int16 value
+                int idx = i * 4;
+                // idx is an offset inside the data area. Ensure the four bytes for this Int32 are present
+                if (dataStartIndex + idx + 3 >= respPayload.Length)
+                {
+                    throw new Exception("Response payload too short for requested Int32 array.");
+                }
+                result[i] = (int)((respPayload[dataStartIndex + idx] << 24) | (respPayload[dataStartIndex + idx + 1] << 16) | (respPayload[dataStartIndex + idx + 2] << 8) | respPayload[dataStartIndex + idx + 3]);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -484,6 +599,64 @@ namespace SYS8.Core.Protocol
 
         }
 
+
+        public async Task<UInt16[]> ReadUInt16ArrayAsync(string address, int count, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadUInt16ArrayAsync(dbNumber, byteOffset, bitIndex, count, cancellationToken);
+        }
+
+        public async Task<UInt16[]> ReadUInt16ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int count, CancellationToken cancellationToken = default)
+        {
+            if (!(count > 0))
+            {
+                throw new ArgumentException("Count must be greater than 0 for reading UInt16 array.");
+            }
+
+            if (bitIndex < 0 || bitIndex > 7)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitIndex), "Bit index must be in range 0..7.");
+            }
+            if (byteOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(byteOffset), "Byte offset must be >= 0.");
+            }
+            int startByte = byteOffset;
+            ushort bytesToRead = (ushort)(count * 2);
+
+            // Read raw bytes (BYTE) starting at the first covered byte. bitIndex is irrelevant for byte reads.
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, startByte, 0, S7Types.ItemTransport.Byte, bytesToRead); //read the whole bytes
+
+            Debug.WriteLine("S7 ReadVar request PDU for UInt16 array (BYTE read): " + BitConverter.ToString(pdu));
+
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+            Debug.WriteLine($"Response payload from BYTE read for UInt16 array: {BitConverter.ToString(respPayload)}");
+
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, (ushort)(bytesToRead * 8)); // minimum bit length is number of bytes read * 8
+
+            int dataStartIndex = dataHeaderStartIndex + 4;
+            UInt16[] result = new UInt16[count]; // prepare result array and count is the number of Int16 values requested
+
+            // Siemens bit numbering: DBX<Byte>.<Bit> where Bit 0 is the LSB of the byte.
+            for (int i = 0; i < count; i++)
+            {
+                // i * 2 for each int16 value
+                int idx = i * 2;
+                // idx is an offset inside the data area. Ensure the two bytes for this Int16 are present
+                if (dataStartIndex + idx + 1 >= respPayload.Length)
+                {
+                    throw new Exception("Response payload too short for requested UInt16 array.");
+                }
+                result[i] = (ushort)((respPayload[dataStartIndex + idx] << 8) | respPayload[dataStartIndex + idx + 1]);
+            }
+
+            return result;
+        }
+
+
+
         public async Task<UInt32> ReadUInt32Async(string address, CancellationToken cancellationToken = default)
         {
             var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
@@ -517,6 +690,62 @@ namespace SYS8.Core.Protocol
                 ((UInt32)respPayload[dataStartIndex + 2] << 8) |
                  (UInt32)respPayload[dataStartIndex + 3];
             return value;
+        }
+
+        public async Task<UInt32[]> ReadUInt32ArrayAsync(string address, int count, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadUInt32ArrayAsync(dbNumber, byteOffset, bitIndex, count, cancellationToken);
+        }
+
+        public async Task<UInt32[]> ReadUInt32ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int count, CancellationToken cancellationToken = default)
+        {
+            if (!(count > 0))
+            {
+                throw new ArgumentException("Count must be greater than 0 for reading UInt32 array.");
+            }
+
+            if (bitIndex < 0 || bitIndex > 7)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitIndex), "Bit index must be in range 0..7.");
+            }
+            if (byteOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(byteOffset), "Byte offset must be >= 0.");
+            }
+
+            int startByte = byteOffset;
+            ushort bytesToRead = (ushort)(count * 4);
+
+            // Read raw bytes (BYTE) starting at the first covered byte. bitIndex is irrelevant for byte reads.
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, startByte, 0, S7Types.ItemTransport.Byte, bytesToRead); //read the whole bytes
+
+            Debug.WriteLine("S7 ReadVar request PDU for UInt32 array (BYTE read): " + BitConverter.ToString(pdu));
+
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+            Debug.WriteLine($"Response payload from BYTE read for UInt32 array: {BitConverter.ToString(respPayload)}");
+
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, (ushort)(bytesToRead * 8)); // minimum bit length is number of bytes read * 8
+
+            int dataStartIndex = dataHeaderStartIndex + 4;
+            UInt32[] result = new UInt32[count]; // prepare result array and count is the number of UInt32 values requested
+
+            // Siemens bit numbering: DBX<Byte>.<Bit> where Bit 0 is the LSB of the byte.
+            for (int i = 0; i < count; i++)
+            {
+                // i * 4 for each UInt32 value
+                int idx = i * 4;
+                // idx is an offset inside the data area. Ensure the four bytes for this UInt32 are present
+                if (dataStartIndex + idx + 3 >= respPayload.Length)
+                {
+                    throw new Exception("Response payload too short for requested UInt32 array.");
+                }
+                result[i] = (uint)((respPayload[dataStartIndex + idx] << 24) | (respPayload[dataStartIndex + idx + 1] << 16) | (respPayload[dataStartIndex + idx + 2] << 8) | respPayload[dataStartIndex + idx + 3]);
+            }
+
+            return result;
         }
 
         /// <summary>
@@ -625,6 +854,68 @@ namespace SYS8.Core.Protocol
             return value;
         }
 
+        public async Task<float[]> ReadFloat32ArrayAsync(string address, int count, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadFloat32ArrayAsync(dbNumber, byteOffset, bitIndex, count, cancellationToken);
+        }
+
+        public async Task<float[]> ReadFloat32ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int count, CancellationToken cancellationToken = default)
+        {
+            if (!(count > 0))
+            {
+                throw new ArgumentException("Count must be greater than 0 for reading Float32 array.");
+            }
+
+            if (bitIndex < 0 || bitIndex > 7)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitIndex), "Bit index must be in range 0..7.");
+            }
+            if (byteOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(byteOffset), "Byte offset must be >= 0.");
+            }
+
+            int startByte = byteOffset;
+            ushort bytesToRead = (ushort)(count * 4);
+
+            // Read raw bytes (BYTE) starting at the first covered byte. bitIndex is irrelevant for byte reads.
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, startByte, 0, S7Types.ItemTransport.Byte, bytesToRead); //read the whole bytes
+
+            Debug.WriteLine("S7 ReadVar request PDU for Float32 array (BYTE read): " + BitConverter.ToString(pdu));
+
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+            Debug.WriteLine($"Response payload from BYTE read for Float32 array: {BitConverter.ToString(respPayload)}");
+
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, (ushort)(bytesToRead * 8)); // minimum bit length is number of bytes read * 8
+
+            int dataStartIndex = dataHeaderStartIndex + 4;
+            float[] result = new float[count]; // prepare result array and count is the number of Float32 values requested
+
+            // Siemens bit numbering: DBX<Byte>.<Bit> where Bit 0 is the LSB of the byte.
+            for (int i = 0; i < count; i++)
+            {
+                // i * 4 for each float32 value
+                int idx = i * 4;
+                // idx is an offset inside the data area. Ensure the four bytes for this Float32 are present
+                if (dataStartIndex + idx + 3 >= respPayload.Length)
+                {
+                    throw new Exception("Response payload too short for requested Float32 array.");
+                }
+                byte[] valueBytes = new byte[4];
+                Buffer.BlockCopy(respPayload, dataStartIndex + idx, valueBytes, 0, 4);
+                if (BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(valueBytes);
+                }
+                result[i] = BitConverter.ToSingle(valueBytes, 0);
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// Read a 64-bit floating point value (LREAL/DOUBLE) from a DB specified by a textual address.
         /// Delegates to the numeric overload after parsing the address string.
@@ -673,6 +964,68 @@ namespace SYS8.Core.Protocol
 
             double value = BitConverter.ToDouble(valueBytes, 0);
             return value;
+        }
+
+        public async Task<double[]> ReadFloat64ArrayAsync(string address, int count, CancellationToken cancellationToken = default)
+        {
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await ReadFloat64ArrayAsync(dbNumber, byteOffset, bitIndex, count, cancellationToken);
+        }
+
+        public async Task<double[]> ReadFloat64ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int count, CancellationToken cancellationToken = default)
+        {
+            if (!(count > 0))
+            {
+                throw new ArgumentException("Count must be greater than 0 for reading Float64 array.");
+            }
+
+            if (bitIndex < 0 || bitIndex > 7)
+            {
+                throw new ArgumentOutOfRangeException(nameof(bitIndex), "Bit index must be in range 0..7.");
+            }
+            if (byteOffset < 0)
+            {
+                throw new ArgumentOutOfRangeException(nameof(byteOffset), "Byte offset must be >= 0.");
+            }
+
+            int startByte = byteOffset;
+            ushort bytesToRead = (ushort)(count * 8);
+
+            // Read raw bytes (BYTE) starting at the first covered byte. bitIndex is irrelevant for byte reads.
+            byte[] pdu = S7ProtocolHelpers.BuildReadWriteSetupRequest(FunctionCode.ReadVar, dbNumber, startByte, 0, S7Types.ItemTransport.Byte, bytesToRead); //read the whole bytes
+
+            Debug.WriteLine("S7 ReadVar request PDU for Float64 array (BYTE read): " + BitConverter.ToString(pdu));
+
+            await _tpktCotp.SendPayloadAsync(pdu, cancellationToken);
+            byte[] respPayload = await _tpktCotp.ReceivePayloadAsync(cancellationToken);
+
+            Debug.WriteLine($"Response payload from BYTE read for Float64 array: {BitConverter.ToString(respPayload)}");
+
+            var (_, _, dataHeaderStartIndex) = S7ProtocolHelpers.ValidateReadResponse(respPayload, 0x04, 0x01, (ushort)(bytesToRead * 8)); // minimum bit length is number of bytes read * 8
+
+            int dataStartIndex = dataHeaderStartIndex + 4;
+            double[] result = new double[count]; // prepare result array and count is the number of Float64 values requested
+
+            // Siemens bit numbering: DBX<Byte>.<Bit> where Bit 0 is the LSB of the byte.
+            for (int i = 0; i < count; i++)
+            {
+                // i * 8 for each float64 value
+                int idx = i * 8;
+                // idx is an offset inside the data area. Ensure the eight bytes for this Float64 are present
+                if (dataStartIndex + idx + 7 >= respPayload.Length)
+                {
+                    throw new Exception("Response payload too short for requested Float64 array.");
+                }
+                byte[] valueBytes = new byte[8];
+                Buffer.BlockCopy(respPayload, dataStartIndex + idx, valueBytes, 0, 8);
+                if (BitConverter.IsLittleEndian)
+                {
+                    Array.Reverse(valueBytes);
+                }
+                result[i] = BitConverter.ToDouble(valueBytes, 0);
+            }
+
+            return result;
         }
 
         /// <summary>

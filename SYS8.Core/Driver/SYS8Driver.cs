@@ -166,7 +166,7 @@ namespace SYS8.Core.Driver
         /// <param name="address">Textual DB address to read (for example "DB1.DBW0").</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 16-bit signed value read from the PLC.</returns>
-        public async Task<Int16> ReadInt16Async(string address, CancellationToken cancellationToken = default)
+        public async Task<short> ReadInt16Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
             return await _s7Protocol.ReadInt16Async(address, cancellationToken);
@@ -188,13 +188,27 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+        public async Task<short[]> ReadInt16ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await _s7Protocol.ReadInt16ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
+        public async Task<short[]> ReadInt16ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadInt16ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
+
         /// <summary>
         /// Read a 32-bit signed integer (DINT) from a DB in the PLC using a textual address.
         /// </summary>
         /// <param name="address">Textual DB address to read (for example "DB1.DBD0").</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 32-bit signed value read from the PLC.</returns>
-        public async Task<Int32> ReadInt32Async(string address, CancellationToken cancellationToken = default)
+        public async Task<int> ReadInt32Async(string address, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
             return await _s7Protocol.ReadInt32Async(address, cancellationToken);
@@ -214,6 +228,20 @@ namespace SYS8.Core.Driver
             EnsureConnected();
             return await _s7Protocol.ReadInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
+
+        public async Task<int[]> ReadInt32ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await _s7Protocol.ReadInt32ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
+        public async Task<int[]> ReadInt32ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadInt32ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
 
         /// <summary>
         /// Read a 64-bit signed integer (LINT) from a DB in the PLC using a textual address.
@@ -269,6 +297,20 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadUInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+        public async Task<UInt16[]> ReadUInt16ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await _s7Protocol.ReadUInt16ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
+        public async Task<UInt16[]> ReadUInt16ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadUInt16ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
+
 
         /// <summary>
         /// Read a 32-bit unsigned integer (DWORD/UDINT) from a DB in the PLC using a textual address.
@@ -294,6 +336,19 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             return await _s7Protocol.ReadUInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        public async Task<UInt32[]> ReadUInt32ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await _s7Protocol.ReadUInt32ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
+        public async Task<UInt32[]> ReadUInt32ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadUInt32ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
         }
 
         /// <summary>
@@ -348,6 +403,19 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadFloat32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+        public async Task<float[]> ReadFloat32ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await _s7Protocol.ReadFloat32ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
+        public async Task<float[]> ReadFloat32ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadFloat32ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
         /// <summary>
         /// Read a 64-bit floating point value (LREAL/DOUBLE) from a DB in the PLC using a textual address.
         /// </summary>
@@ -372,6 +440,19 @@ namespace SYS8.Core.Driver
         {
             EnsureConnected();
             return await _s7Protocol.ReadFloat64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
+        }
+
+        public async Task<double[]> ReadFloat64ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            var (dbNumber, byteOffset, bitIndex) = ParseStringAddress(address);
+            return await _s7Protocol.ReadFloat64ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
+        }
+
+        public async Task<double[]> ReadFloat64ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
+        {
+            EnsureConnected();
+            return await _s7Protocol.ReadFloat64ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
         }
 
         /// <summary>

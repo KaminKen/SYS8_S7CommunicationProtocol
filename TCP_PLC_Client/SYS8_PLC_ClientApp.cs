@@ -211,17 +211,103 @@ namespace S7CommunicationApp
                 else
                 {
                     using var cts = new System.Threading.CancellationTokenSource(TimeSpan.FromSeconds(5));
-                    if (datatype == "bool")
-                    { 
-                        bool[] result = await _driver.ReadBoolArrayAsync(AddressTextBox.Text, length, cts.Token);
-                        if (result.Length != length)
+
+                    switch (datatype)
+                    {
+                        case "bool":
                         {
-                            throw new Exception($"Expected {length} boolean values, but received {result.Length}.");
+                            bool[] boolResult = await _driver.ReadBoolArrayAsync(AddressTextBox.Text, length, cts.Token);
+                            if (boolResult.Length != length)
+                            {
+                                throw new Exception($"Expected {length} boolean values, but received {boolResult.Length}.");
+                            }
+                            for (int i = 0; i < boolResult.Length; i++)
+                            {
+                                LogTextBox.AppendText($"Read Bool[{i}] from {AddressTextBox.Text}: {boolResult[i]}\r\n");
+                            }
+                            break;
                         }
-                        for (int i = 0; i < result.Length; i++)
+                        case "int16":
                         {
-                            LogTextBox.AppendText($"Read Bool[{i}] from {AddressTextBox.Text}: {result[i]}\r\n");
+                            short[] int16Result = await _driver.ReadInt16ArrayAsync(AddressTextBox.Text, length, cts.Token);
+                            if (int16Result.Length != length)
+                            {
+                                throw new Exception($"Expected {length} Int16 values, but received {int16Result.Length}.");
+                            }
+                            for (int i = 0; i < int16Result.Length; i++)
+                            {
+                                LogTextBox.AppendText($"Read Int16[{i}] from {AddressTextBox.Text}: {int16Result[i]}\r\n");
+                            }
+                            break;
                         }
+                        case "int32":
+                            {
+                                int[] int32Result = await _driver.ReadInt32ArrayAsync(AddressTextBox.Text, length, cts.Token);
+                                if (int32Result.Length != length)
+                                {
+                                    throw new Exception($"Expected {length} Int32 values, but received {int32Result.Length}.");
+                                }
+                                for (int i = 0; i < int32Result.Length; i++)
+                                {
+                                    LogTextBox.AppendText($"Read Int32[{i}] from {AddressTextBox.Text}: {int32Result    [i]}\r\n");
+                                }
+                                break;
+                            }
+                        case "uint16":
+                            {
+                                ushort[] u16Result = await _driver.ReadUInt16ArrayAsync(AddressTextBox.Text, length, cts.Token);
+                                if (u16Result.Length != length)
+                                {
+                                    throw new Exception($"Expected {length} UInt16 values, but received {u16Result.Length}.");
+                                }
+                                for (int i = 0; i < u16Result.Length; i++)
+                                {
+                                    LogTextBox.AppendText($"Read UInt16[{i}] from {AddressTextBox.Text}: {u16Result[i]}\r\n");
+                                }
+                                break;
+                            }
+                        case "uint32":
+                            {
+                                uint[] u32Result = await _driver.ReadUInt32ArrayAsync(AddressTextBox.Text, length, cts.Token);
+                                if (u32Result.Length != length)
+                                {
+                                    throw new Exception($"Expected {length} UInt32 values, but received {u32Result.Length}.");
+                                }
+                                for (int i = 0; i < u32Result.Length; i++)
+                                {
+                                    LogTextBox.AppendText($"Read UInt32[{i}] from {AddressTextBox.Text}: {u32Result[i]}\r\n");
+                                }
+                                break;
+                            }
+                        case "float32":
+                            {
+                                float[] f32Result = await _driver.ReadFloat32ArrayAsync(AddressTextBox.Text, length, cts.Token);
+                                if (f32Result.Length != length)
+                                {
+                                    throw new Exception($"Expected {length} Float32 values, but received {f32Result.Length}.");
+                                }
+                                for (int i = 0; i < f32Result.Length; i++)
+                                {
+                                    LogTextBox.AppendText($"Read Float32[{i}] from {AddressTextBox.Text}: {f32Result[i]}\r\n");
+                                }
+                                break;
+                            }
+                        case "float64":
+                            {
+                                double[] f64Result = await _driver.ReadFloat64ArrayAsync(AddressTextBox.Text, length, cts.Token);
+                                if (f64Result.Length != length)
+                                {
+                                    throw new Exception($"Expected {length} Float64 values, but received {f64Result.Length}.");
+                                }
+                                for (int i = 0; i < f64Result.Length; i++)
+                                {
+                                    LogTextBox.AppendText($"Read Float64[{i}] from {AddressTextBox.Text}: {f64Result[i]}\r\n");
+                                }
+                                break;
+                            }
+                        default:
+                            LogTextBox.AppendText($"Reading arrays of type '{datatype}' is not implemented yet.\r\n");
+                            break;
                     }
                 }
 
