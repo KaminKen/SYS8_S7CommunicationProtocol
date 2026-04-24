@@ -11,19 +11,19 @@ namespace SYS8.Core.StringManipulation
 
             Debug.WriteLine($"Parsing address: {address}");
 
-            string[] parts = address.Split('.');
+            string[] parts = address.ToLowerInvariant().Split('.');
 
             if (parts.Length != 3)
             {
                 throw new FormatException("Invalid address format. Expected format: DB{number}.DBX{byteOffset}.{bitIndex}");
             }
 
-            if (!parts[0].StartsWith("DB"))
+            if (!parts[0].StartsWith("db"))
             {
                 throw new FormatException("Address must start with DB.");
             }
 
-            if (!parts[1].StartsWith("DBX"))
+            if (!parts[1].StartsWith("dbx"))
             {
                 throw new FormatException("Second part must be DBX{byteOffset}.");
             }
