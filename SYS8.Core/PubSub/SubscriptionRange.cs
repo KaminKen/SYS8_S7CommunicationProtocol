@@ -12,6 +12,9 @@ namespace SYS8.Core.PubSub
         public int StartAbsoluteBitOffset { get; set; }
         public int EndAbsoluteBitOffset { get; set; }
 
+        public int StartingByteOffset => StartAbsoluteBitOffset / 8;
+        public int EndingByteOffset => (EndAbsoluteBitOffset) / 8;
+
         public List<SubscriptionItem> Items { get; set; } = new();
     }
 }

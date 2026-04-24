@@ -112,9 +112,57 @@ namespace S7CommunicationApp
             }
         }
 
-        private void ReadCheckButton_Click(object sender, EventArgs e)
+        private async void ReadCheckButton_Click(object sender, EventArgs e)
         {
-            // This is just a placeholder for the read check functionality.
+            // Quick subscription-array tests to validate SubscribeArray behavior.
+            try
+            {
+                if (ps == null)
+                {
+                    throw new InvalidOperationException("Monitoring model is not initialized.");
+                }
+
+                // unsubscribe all before running tests to ensure a clean slate
+                try { ps.UnsubscribeAll(); } catch { }
+                SubscribeListTextBox.Clear();
+
+                var tests = new List<(string topic, int length, string type)>()
+                {
+                    // single bool
+                    (AddressTextBox.Text ?? "DB1.DBX0.0", 1, "bool"),
+                    // cross-byte bools (start near end of byte)
+                    ("DB1.DBX0.6", 4, "bool"),
+                    // int16 array
+                    ("DB1.DBW0", 3, "int16"),
+                    // int32 array
+                    ("DB1.DBD0", 2, "int32")
+                };
+
+                foreach (var t in tests)
+                {
+                    try
+                    {
+                        string lastTopic = await ps.SubscribeArray(t.topic, t.length, t.type);
+                        SubscribeListTextBox.AppendText($"TEST: {t.topic} ({t.type}) len={t.length} last={lastTopic}{Environment.NewLine}");
+                        _mainForm.LogMessage($"[PubSub Test] Subscribed {t.topic} {t.type} len={t.length} last={lastTopic}");
+                    }
+                    catch (Exception ex)
+                    {
+                        SubscribeListTextBox.AppendText($"TEST FAILED: {t.topic} ({t.type}) -> {ex.Message}{Environment.NewLine}");
+                        _mainForm.LogMessage($"[PubSub Test] Failed {t.topic}: {ex.Message}");
+                    }
+                }
+
+                if (!ps.IsPolling)
+                {
+                    ps.StartPolling();
+                    _mainForm.LogMessage("[PubSub Test] Polling started.");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Test error: {ex.Message}");
+            }
         }
     }
 }
