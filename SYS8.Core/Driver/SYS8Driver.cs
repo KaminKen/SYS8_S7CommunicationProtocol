@@ -147,7 +147,7 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
-        /// Read an array of boolean values using numeric DB parameters.
+        /// Read an array of boolean values using a textual DB address.
         /// </summary>
         /// <param name="address">Textual DB address to read (for example "DB1.DBX0.1").</param>
         /// <param name="elementCount">Number of elements to read.</param>
@@ -165,7 +165,7 @@ namespace SYS8.Core.Driver
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
         /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
-        /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
+        /// <param name="bitIndex">Bit index within the byte (0..7).</param>
         /// <param name="elementCount">Number of elements to read.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>An array of boolean values read from the PLC.</returns>
@@ -204,7 +204,7 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
-        /// Read an array of 16-bit signed integer (INT) using numeric DB parameters.
+        /// Read an array of 16-bit signed integers (INT) using a textual DB address.
         /// </summary>
         /// <param name="address">Textual DB address to read (for example "DB1.DBW0").</param>
         /// <param name="elementCount">Number of elements to read.</param>
@@ -222,7 +222,7 @@ namespace SYS8.Core.Driver
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
         /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
-        /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
+        /// <param name="bitIndex">Bit index within the byte (ignored for INT).</param>
         /// <param name="elementCount">Number of elements to read.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>An array of 16-bit signed values read from the PLC.</returns>
@@ -261,7 +261,7 @@ namespace SYS8.Core.Driver
         }
 
         /// <summary>
-        /// Read an array of 32-bit signed integer (DINT) using numeric DB parameters.
+        /// Read an array of 32-bit signed integers (DINT) using a textual DB address.
         /// </summary>
         /// <param name="address">Textual DB address to read (for example "DB1.DBD0").</param>
         /// <param name="elementCount">Number of elements to read.</param>
@@ -279,7 +279,7 @@ namespace SYS8.Core.Driver
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
         /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
-        /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
+        /// <param name="bitIndex">Bit index within the byte (ignored for DINT).</param>
         /// <param name="elementCount">Number of elements to read.</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>An array of 32-bit signed values read from the PLC.</returns>
