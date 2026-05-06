@@ -146,7 +146,13 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadBoolAsync(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
-
+        /// <summary>
+        /// Read an array of boolean values using numeric DB parameters.
+        /// </summary>
+        /// <param name="address">Textual DB address to read (for example "DB1.DBX0.1").</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of boolean values read from the PLC.</returns>
         public async Task<bool[]> ReadBoolArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -154,6 +160,15 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadBoolArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of boolean values using numeric DB parameters.
+        /// </summary>
+        /// <param name="dbNumber">The data block number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
+        /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of boolean values read from the PLC.</returns>
         public async Task<bool[]> ReadBoolArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -188,6 +203,13 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 16-bit signed integer (INT) using numeric DB parameters.
+        /// </summary>
+        /// <param name="address">Textual DB address to read (for example "DB1.DBW0").</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 16-bit signed values read from the PLC.</returns>
         public async Task<short[]> ReadInt16ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -195,6 +217,15 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadInt16ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 16-bit signed integer (INT) using numeric DB parameters.
+        /// </summary>
+        /// <param name="dbNumber">The data block number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
+        /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 16-bit signed values read from the PLC.</returns>
         public async Task<short[]> ReadInt16ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -229,6 +260,13 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 32-bit signed integer (DINT) using numeric DB parameters.
+        /// </summary>
+        /// <param name="address">Textual DB address to read (for example "DB1.DBD0").</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 32-bit signed values read from the PLC.</returns>
         public async Task<int[]> ReadInt32ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -236,6 +274,15 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadInt32ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 32-bit signed integer (DINT) using numeric DB parameters.
+        /// </summary>
+        /// <param name="dbNumber">The data block number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
+        /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 32-bit signed values read from the PLC.</returns>
         public async Task<int[]> ReadInt32ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -259,7 +306,7 @@ namespace SYS8.Core.Driver
         /// Read a 64-bit signed integer (LINT) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
-        /// <param name="byteOffset">Byte offset inside the DB where the 8-byte value starts.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
         /// <param name="bitIndex">Bit index within the byte (ignored for LINT).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 64-bit signed value read from the PLC.</returns>
@@ -297,6 +344,13 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadUInt16Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 16-bit unsigned integer (WORD/UINT) using numeric DB parameters.
+        /// </summary>
+        /// <param name="address">Textual DB address to read (for example "DB1.DBW0").</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 16-bit unsigned values read from the PLC.</returns>
         public async Task<UInt16[]> ReadUInt16ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -304,6 +358,15 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadUInt16ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 16-bit unsigned integer (WORD/UINT) using numeric DB parameters.
+        /// </summary>
+        /// <param name="dbNumber">The data block number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
+        /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 16-bit unsigned values read from the PLC.</returns>
         public async Task<UInt16[]> ReadUInt16ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -331,13 +394,20 @@ namespace SYS8.Core.Driver
         /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
         /// <param name="bitIndex">Bit index within the byte (ignored for DWORD/UDINT).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
-        /// <returns>The 32-bit unsigned value read from the PLC.</returns>
+        /// <returns>The 32-bit unsigned values read from the PLC.</returns>
         public async Task<uint> ReadUInt32Async(ushort dbNumber, int byteOffset, int bitIndex, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
             return await _s7Protocol.ReadUInt32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 32-bit unsigned integer (DWORD/UDINT) using numeric DB parameters.
+        /// </summary>
+        /// <param name="address">Textual DB address to read.</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 32-bit unsigned values read from the PLC.</returns>
         public async Task<UInt32[]> ReadUInt32ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -345,6 +415,16 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadUInt32ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
         }
 
+
+        /// <summary>
+        /// Read an array of 32-bit unsigned integer (DWORD/UDINT) using numeric DB parameters.
+        /// </summary>
+        /// <param name="dbNumber">The data block number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
+        /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 32-bit unsigned values read from the PLC.</returns>
         public async Task<UInt32[]> ReadUInt32ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -367,7 +447,7 @@ namespace SYS8.Core.Driver
         /// Read a 64-bit unsigned integer (ULINT) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
-        /// <param name="byteOffset">Byte offset inside the DB where the 8-byte value starts.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
         /// <param name="bitIndex">Bit index within the byte (ignored for ULINT).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 64-bit unsigned value read from the PLC.</returns>
@@ -393,7 +473,7 @@ namespace SYS8.Core.Driver
         /// Read a 32-bit floating point value (REAL) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
-        /// <param name="byteOffset">Byte offset inside the DB where the 4-byte value starts.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
         /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 32-bit floating point value read from the PLC.</returns>
@@ -403,6 +483,13 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadFloat32Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 32-bit floating point value (REAL) using numeric DB parameters.
+        /// </summary>
+        /// <param name="address">Textual DB address to read.</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 32-bit floating point values read from the PLC.</returns>
         public async Task<float[]> ReadFloat32ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -410,6 +497,15 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadFloat32ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 32-bit floating point value (REAL) using numeric DB parameters.
+        /// </summary>
+        /// <param name="dbNumber">The data block number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
+        /// <param name="bitIndex">Bit index within the byte (ignored for REAL).</param>
+        /// <param name="elementCount">Number of elements to read.</param>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>An array of 32-bit floating point values read from the PLC.</returns>
         public async Task<float[]> ReadFloat32ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -432,7 +528,7 @@ namespace SYS8.Core.Driver
         /// Read a 64-bit floating point value (LREAL/DOUBLE) using numeric DB parameters.
         /// </summary>
         /// <param name="dbNumber">The data block number to read from.</param>
-        /// <param name="byteOffset">Byte offset inside the DB where the 8-byte value starts.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
         /// <param name="bitIndex">Bit index within the byte (ignored for LREAL).</param>
         /// <param name="cancellationToken">Optional cancellation token.</param>
         /// <returns>The 64-bit floating point value read from the PLC.</returns>
@@ -442,6 +538,13 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadFloat64Async(dbNumber, byteOffset, bitIndex, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 64-bit floating point values (LREAL/DOUBLE) using numeric DB parameters.
+        /// </summary>
+        /// <param name="address">Textual DB address to read.</param>
+        /// <param name="elementCount">Number of elements to read.</param>  
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The array of 64-bit floating point value read from the PLC.</returns>
         public async Task<double[]> ReadFloat64ArrayAsync(string address, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
@@ -449,6 +552,15 @@ namespace SYS8.Core.Driver
             return await _s7Protocol.ReadFloat64ArrayAsync(dbNumber, byteOffset, bitIndex, elementCount, cancellationToken);
         }
 
+        /// <summary>
+        /// Read an array of 64-bit floating point values (LREAL/DOUBLE) using numeric DB parameters.
+        /// </summary>
+        /// <param name="dbNumber">The data block number to read from.</param>
+        /// <param name="byteOffset">Byte offset inside the DB where the value starts.</param>
+        /// <param name="bitIndex">Bit index within the byte (ignored for LREAL).</param>
+        /// <param name="elementCount">Number of elements to read.</param>  
+        /// <param name="cancellationToken">Optional cancellation token.</param>
+        /// <returns>The array of 64-bit floating point value read from the PLC.</returns>
         public async Task<double[]> ReadFloat64ArrayAsync(ushort dbNumber, int byteOffset, int bitIndex, int elementCount, CancellationToken cancellationToken = default)
         {
             EnsureConnected();
