@@ -61,7 +61,7 @@ namespace SYS8.Core.Driver
         /// <param name="topic">The topic or address to subscribe to.</param>
         /// <param name="length">The number of elements in the array.</param>
         /// <param name="datatype">The data type that should be used when reading the array elements.</param>
-        /// <returns>A task that completes when the subscription has been registered.</returns>
+        /// <returns>A string of the last datablock address that is registered.</returns>
         public Task<string> SubscribeArray(string topic, int length, string datatype)
         {
             return _model.SubscribeArray(topic, length, datatype);
